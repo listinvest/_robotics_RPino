@@ -88,9 +88,14 @@ func prometheus_update() {
 }
 
 func json_stats(w http.ResponseWriter, r *http.Request) { 
-	mutex.Lock()
-	msg,_ := json.Marshal(arduino_in)
-        mutex.Unlock()
+        all_data := make(map[string]int)	
+	for k,v := range arduino_in {
+		all_data[k]=v
+	}
+	for k,v := range rpi_stat {
+		all_data[k]=v
+	}
+	msg,_ := json.Marshal(all_data)
 	w.Write(msg)
 }
 
@@ -128,7 +133,9 @@ func mainpage(w http.ResponseWriter, r *http.Request) {
          <body>
          <h1>Rpino Exporter</h1>
          <h2>parameters '` + strings.Join(os.Args, " ") + `'</h2>
-         <p><a href='/metrics'><b>Metrics</b></a></p>
+         <p><a href='/metrics'><b>Prometheus Metrics</b></a></p>
+         <p><a href='/json'><b>JSON Metrics</b></a></p>
+         <p><a href='/socket'><b>Socket API endpoint</b></a></p>
          </body>
          </html>
          `))
