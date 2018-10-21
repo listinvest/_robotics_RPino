@@ -27,10 +27,3 @@ func loadConfig(path string) (*config, error) {
 	return conf, nil
 }
 
-/*
-func main(){
-	configs,_ := loadConfig("./cfg.cfg") 
-	fmt.Printf("%v",configs.Arduino_sensors)
-
-}
-*/

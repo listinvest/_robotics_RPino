@@ -6,6 +6,7 @@ import (
 	"flag"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/stianeikeland/go-rpio"
 	"log"
 	"math"
 	"math/rand"
@@ -24,22 +25,23 @@ import (
 var SensorStat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "SensorStat",
 	Help: "Arduino sensors stats",
-},
+	},
 	[]string{"sensor"})
 
 var RPIStat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "RPIStat",
 	Help: "RPI stats",
-},
+	},
 	[]string{"rpi"})
 
 var (
 	verbose bool
-	//elements       int
-	arduino_in map[string]int
+	arduino_stat map[string]int
 	rpi_stat   map[string]int
 	gpio1      chan (string)
 	gpio2      chan (string)
+	arduino_in chan (string) // questions to  Arduino
+	arduino_out chan (string) // replies from Arduino
 )
 
 var mutex = &sync.Mutex{}
@@ -49,21 +51,32 @@ func init() {
 	prometheus.MustRegister(RPIStat)
 	gpio1 = make(chan string)
 	gpio2 = make(chan string)
-	arduino_in = make(map[string]int)
+	arduino_in = make(chan string)
+	arduino_out = make(chan string)
+
+        if err := rpio.Open(); err != nil {
+                log.Fatal(err)
+        }
+	arduino_stat = make(map[string]int)
 	rpi_stat = make(map[string]int)
 }
 
 func read_arduino(conf *config) {
-	mutex.Lock()
 	for _, s := range conf.Arduino_sensors {
-		output,_ := strconv.ParseFloat(comm_arduino(s),64)
+		arduino_in <- s
+		reply := <- arduino_out
+		output,err := strconv.ParseFloat(reply,64)
+		if err != nil {
+			log.Printf("Failed conversion: %s\n",err)
+		}
 		log.Printf("value stored: %d",int(output))
 		outputf := math.Round(output)
-		time.Sleep(time.Second)
-		log.Printf("value stored: %d",int(outputf))
-		arduino_in[s] = int(outputf)
+		time.Sleep(time.Millisecond*500)
+		mutex.Lock()
+			arduino_stat[s] = int(outputf)
+		mutex.Unlock()
 	}
-	mutex.Unlock()
+	arduino_in <- "S" // arduino will blink its built-in led
 }
 
 func get_rpi_stat() {
@@ -82,7 +95,7 @@ func get_rpi_stat() {
 
 func prometheus_update() {
 	mutex.Lock()
-	for k, v := range arduino_in {
+	for k, v := range arduino_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
 	}
 	for k, v := range rpi_stat {
@@ -93,7 +106,7 @@ func prometheus_update() {
 
 func json_stats(w http.ResponseWriter, r *http.Request) {
 	all_data := make(map[string]int)
-	for k, v := range arduino_in {
+	for k, v := range arduino_stat {
 		all_data[k] = v
 	}
 	for k, v := range rpi_stat {
@@ -146,17 +159,33 @@ func mainpage(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func send_gpio1(gpio1 <-chan string) {
+func send_gpio1(conf *config, gpio1 <-chan string) {
+	pin := rpio.Pin(conf.Socket1)
+	pin.Output()
 	for {
 		status := <-gpio1
 		log.Printf("Sending %s to GPIO1", status)
+		if status == "on" {
+			pin.High()
+		}
+		if status == "off" {
+			pin.Low()
+		}
 	}
 }
 
-func send_gpio2(gpio2 <-chan string) {
+func send_gpio2(conf *config, gpio2 <-chan string) {
+	pin := rpio.Pin(conf.Socket2)
+	pin.Output()
 	for {
 		status := <-gpio2
 		log.Printf("Sending %s to GPIO2", status)
+		if status == "on" {
+			pin.High()
+		}
+		if status == "off" {
+			pin.Low()
+		}
 	}
 }
 
@@ -189,8 +218,9 @@ func main() {
 			prometheus_update()
 		}
 	}()
-	go send_gpio1(gpio1)
-	go send_gpio2(gpio2)
+	go send_gpio1(conf,gpio1)
+	go send_gpio2(conf,gpio2)
+	go comm_arduino()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/socket", command_socket)
