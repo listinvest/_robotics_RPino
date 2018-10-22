@@ -66,16 +66,15 @@ func read_arduino(conf *config) {
 		log.Println("Arduino stats")
 	}
 	for _, s := range conf.Arduino_sensors {
-		arduino_in <-s
 		log.Printf("sent instruction for: %s",s)
-		reply := <-arduino_out
+		reply := comm2_arduino(s)
 		output,err := strconv.Atoi(reply)
 		if err != nil {
 			log.Printf("Failed conversion: %s\n",err)
 		}
-		log.Printf("value stored: %d\n",int(output))
+		log.Printf("value stored: %d\n",output)
 		mutex.Lock()
-			arduino_stat[s] = int(output)
+			arduino_stat[s] = output
 		mutex.Unlock()
 		time.Sleep(time.Second)
 	}
@@ -226,7 +225,6 @@ func main() {
 	}()
 	go send_gpio1(conf,gpio1)
 	go send_gpio2(conf,gpio2)
-	go comm_arduino()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/socket", command_socket)
