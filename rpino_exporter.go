@@ -8,7 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stianeikeland/go-rpio"
 	"log"
-	"math"
+	//"math"
 	"math/rand"
 	"net/http"
 	_ "net/http/pprof"
@@ -62,24 +62,30 @@ func init() {
 }
 
 func read_arduino(conf *config) {
+	if conf.Verbose {
+		log.Println("Arduino stats")
+	}
 	for _, s := range conf.Arduino_sensors {
-		arduino_in <- s
-		reply := <- arduino_out
-		output,err := strconv.ParseFloat(reply,64)
+		arduino_in <-s
+		log.Printf("sent instruction for: %s",s)
+		reply := <-arduino_out
+		output,err := strconv.Atoi(reply)
 		if err != nil {
 			log.Printf("Failed conversion: %s\n",err)
 		}
-		log.Printf("value stored: %d",int(output))
-		outputf := math.Round(output)
-		time.Sleep(time.Millisecond*500)
+		log.Printf("value stored: %d\n",int(output))
 		mutex.Lock()
-			arduino_stat[s] = int(outputf)
+			arduino_stat[s] = int(output)
 		mutex.Unlock()
+		time.Sleep(time.Second)
 	}
-	arduino_in <- "S" // arduino will blink its built-in led
+	//arduino_in <- "S" // arduino will blink its built-in led
 }
 
-func get_rpi_stat() {
+func get_rpi_stat(verbose bool) {
+	if verbose {
+		log.Println("RPi stats")
+	}
 	cmd_load := "uptime | cut -d ' ' -f 11|cut -d '.' -f 1"
 	oneminload, err := exec.Command("bash", "-c", cmd_load).Output()
 	if err != nil {
@@ -190,8 +196,8 @@ func send_gpio2(conf *config, gpio2 <-chan string) {
 }
 
 func main() {
-	confPath := flag.String("conf", "cfg.cfg", "Configuration file")
-	verbose := flag.Bool("verbose", false, "Enable logging")
+	confPath := flag.String("c", "cfg.cfg", "Configuration file")
+	verbose := flag.Bool("v", false, "Enable logging")
 	flag.Parse()
 
 	conf, err := loadConfig(*confPath)
@@ -212,8 +218,8 @@ func main() {
 			if *verbose {
 				log.Println("\nStats at", t)
 			}
+			get_rpi_stat(*verbose)
 			read_arduino(conf)
-			get_rpi_stat()
 			time.Sleep(time.Second)
 			prometheus_update()
 		}
