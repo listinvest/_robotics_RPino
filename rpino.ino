@@ -29,8 +29,8 @@ void loop() {
     dht.read();
     switch(dht.getState()) {
       case DHT_OK:
-       temp = dht.getTemperatureC();
-       humidity = dht.getHumidity();
+       temp = (int) dht.getTemperatureC();
+       humidity = (int) dht.getHumidity();
        dht_status = "ok";
        break;
      case DHT_ERROR_CHECKSUM:
@@ -66,9 +66,9 @@ void loop() {
        Serial.print("S: ");
        Serial.println(dht_status);
        digitalWrite(ledPin, HIGH);
-      delay(1000);
-      digitalWrite(ledPin, LOW);
-    }
+       delay(1000);
+       digitalWrite(ledPin, LOW);
+    } 
   }  
   //Serial.println();
   delay(1000);
