@@ -80,7 +80,7 @@ func read_arduino(conf *config) {
 	}
 	check := comm2_arduino("S")
 	if check != "ok" {
-		log.Printf("Periodic check failed!\n")
+		log.Printf("Periodic check failed (%q)!\n",check)
 	}
 }
 
