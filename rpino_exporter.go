@@ -78,7 +78,10 @@ func read_arduino(conf *config) {
 		mutex.Unlock()
 		time.Sleep(time.Second)
 	}
-	//arduino_in <- "S" // arduino will blink its built-in led
+	check := comm2_arduino("S")
+	if check != "ok" {
+		log.Printf("Periodic check failed!\n")
+	}
 }
 
 func get_rpi_stat(verbose bool) {
