@@ -79,9 +79,16 @@ func read_arduino(conf *config) {
 		time.Sleep(time.Second)
 	}
 	check := comm2_arduino("S")
+	mutex.Lock()
+	arduino_stat["error"]=0
 	if check != "ok" {
 		log.Printf("Periodic check failed (%q)!\n",check)
+		arduino_stat["error"]=1
 	}
+	if check != "S?" {
+		arduino_stat["error"]=1
+	}
+	mutex.Unlock()
 }
 
 func get_rpi_stat(verbose bool) {
@@ -124,31 +131,46 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 	w.Write(msg)
 }
 
-func command_socket(w http.ResponseWriter, r *http.Request) {
-	socket, ok := r.URL.Query()["s1"]
-	if ok {
-		if socket[0] == "on" {
-			gpio1 <- "on"
-			w.Write([]byte("Turning ON"))
-		} else if socket[0] == "off" {
-			gpio1 <- "off"
-			w.Write([]byte("Turning OFF"))
-		} else {
-			w.Write([]byte("Specify 'on' or 'off'"))
+func api_router(w http.ResponseWriter, r *http.Request) {
+
+	api_type := r.URL.Path
+	switch api_type {
+	case "/api/socket" :
+		socket,ok := r.URL.Query()["s1"]
+		if ok {
+			if socket[0] != "" {
+				reply := command_socket(socket[0])
+				w.Write([]byte(reply))
+			}
 		}
-	}
-	socket, ok = r.URL.Query()["s2"]
-	if ok {
-		if socket[0] == "on" {
-			gpio2 <- "on"
-			w.Write([]byte("Turning ON"))
-		} else if socket[0] == "off" {
-			gpio2 <- "off"
-			w.Write([]byte("Turning OFF"))
-		} else {
-			w.Write([]byte("Specify 'on' or 'off'"))
+		socket2,ok := r.URL.Query()["s2"]
+		if ok {
+			if socket2[0] != "" {
+				reply := command_socket(socket2[0])
+				w.Write([]byte(reply))
+			}
 		}
+
+	case  "/api/arduino_reset" :
+		comm2_arduino("X")
+
+	default :
+		log.Printf("Unknown Api (%s)!\n",api_type)
+		w.Write([]byte("Unknown Api"))
 	}
+}
+
+func command_socket(socket string) (reply string){
+	if socket == "on" {
+		gpio1 <- "on"
+		reply = "Turning ON"
+	} else if socket == "off" {
+		gpio1 <- "off"
+		reply = "Turning OFF"
+	} else {
+		reply = "Specify 'on' or 'off'"
+	}
+	return reply
 }
 
 func mainpage(w http.ResponseWriter, r *http.Request) {
@@ -230,7 +252,7 @@ func main() {
 	go send_gpio2(conf,gpio2)
 
 	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc("/socket", command_socket)
+	http.HandleFunc("/api/", api_router)
 	http.HandleFunc("/json", json_stats)
 	http.HandleFunc("/main", mainpage)
 	log.Fatal(http.ListenAndServe(conf.Listen, nil))
