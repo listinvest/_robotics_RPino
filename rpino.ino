@@ -22,6 +22,10 @@ void setup() {
   digitalWrite(ledPin, LOW);
 }
 
+void softReset() {
+asm volatile ("  jmp 0");
+}
+
 void loop() {
   
   if (Serial.available() > 0) {
@@ -29,7 +33,7 @@ void loop() {
     dht.read();
     switch(dht.getState()) {
       case DHT_OK:
-       temp = (int) dht.getTemperatureC();
+       temp = (int)dht.getTemperatureC();
        humidity = (int) dht.getHumidity();
        dht_status = "ok";
        break;
@@ -69,6 +73,9 @@ void loop() {
        delay(1000);
        digitalWrite(ledPin, LOW);
     } 
+    if (incoming == "X?\n") {
+       softReset();
+    }
   }  
   //Serial.println();
   delay(1000);
