@@ -108,6 +108,20 @@ func get_rpi_stat(verbose bool) {
 	mutex.Unlock()
 }
 
+func speak() {
+	sermon := "espeak -g 5 \"Please listen to the following stats:\n"
+	for k, v := range arduino_stat {
+		val := strconv.Itoa(v)
+		sermon = sermon + k +" is " + val + "\n"
+	}
+	sermon = sermon +"\""
+	log.Printf("%s\n",sermon)
+	_, err := exec.Command("bash", "-c", sermon).Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func prometheus_update() {
 	mutex.Lock()
 	for k, v := range arduino_stat {
@@ -233,7 +247,6 @@ func main() {
 		conf.Verbose = true
 	}
 	log.Printf("Metrics will be exposed on %s\n", conf.Listen)
-
 	//set a x seconds ticker
 	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
 
@@ -246,6 +259,7 @@ func main() {
 			read_arduino(conf)
 			time.Sleep(time.Second)
 			prometheus_update()
+			speak()
 		}
 	}()
 	go send_gpio1(conf,gpio1)
