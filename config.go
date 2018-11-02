@@ -10,7 +10,9 @@ type config struct {
 	Socket1           int      `toml:"socket1"`
 	Socket2           int      `toml:"socket2"`
 	Poll_interval	  int	   `toml:"poll_interval"`
-	Arduino_sensors    []string  `toml:"arduino_sensors"`
+	Critical_temp	  int	   `toml:"critical_temp"`
+	Alarm_pin	  int	   `toml:"alarm_pin"`
+	Arduino_sensors   []string  `toml:"arduino_sensors"`
 	Verbose           bool     `toml:"verbose"`
 }
 

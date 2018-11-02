@@ -122,6 +122,22 @@ func speak() {
 	}
 }
 
+func alarm_mgr(conf *config) {
+        mutex.Lock()
+        actual_temp := arduino_stat['T']
+        mutex.Unlock()
+        if actual_temp conf.Critical_temp < {
+                log.Printf("Periodic check failed (%q)!\n",check)
+                pin := rpio.Pin(conf.Socket1)
+                pin.Output()
+                pin.High()
+                time.Sleep(time.Second)
+                pin.Low()
+        }
+}
+
+
+
 func prometheus_update() {
 	mutex.Lock()
 	for k, v := range arduino_stat {
