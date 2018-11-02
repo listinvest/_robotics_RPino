@@ -133,6 +133,7 @@ func human_presence() {
 }
 
 func alarm_mgr(conf *config) {
+        time.Sleep(time.Minute) //wait for PIR initialization
         mutex.Lock()
         actual_temp := arduino_stat["T"]
         mutex.Unlock()
