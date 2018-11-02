@@ -25,23 +25,24 @@ import (
 var SensorStat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "SensorStat",
 	Help: "Arduino sensors stats",
-	},
+},
 	[]string{"sensor"})
 
 var RPIStat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "RPIStat",
 	Help: "RPI stats",
-	},
+},
 	[]string{"rpi"})
 
 var (
-	verbose bool
+	verbose      bool
 	arduino_stat map[string]int
-	rpi_stat   map[string]int
-	gpio1      chan (string)
-	gpio2      chan (string)
-	arduino_in chan (string) // questions to  Arduino
-	arduino_out chan (string) // replies from Arduino
+	rpi_stat     map[string]int
+	gpio1        chan (string)
+	gpio2        chan (string)
+	arduino_in   chan (string) // questions to  Arduino
+	arduino_out  chan (string) // replies from Arduino
+	failed_read int = 0
 )
 
 var mutex = &sync.Mutex{}
@@ -54,9 +55,9 @@ func init() {
 	arduino_in = make(chan string)
 	arduino_out = make(chan string)
 
-        if err := rpio.Open(); err != nil {
-                log.Fatal(err)
-        }
+	if err := rpio.Open(); err != nil {
+		log.Fatal(err)
+	}
 	arduino_stat = make(map[string]int)
 	rpi_stat = make(map[string]int)
 }
@@ -66,27 +67,24 @@ func read_arduino(conf *config) {
 		log.Println("Arduino stats")
 	}
 	for _, s := range conf.Arduino_sensors {
-		log.Printf("sent instruction for: %s",s)
+		log.Printf("sent instruction for: %s", s)
 		reply := comm2_arduino(s)
-		output,err := strconv.Atoi(reply)
+		output, err := strconv.Atoi(reply)
 		if err != nil {
-			log.Printf("Failed conversion: %s\n",err)
+			log.Printf("Failed conversion: %s\n", err)
 		}
-		log.Printf("value stored: %d\n",output)
+		log.Printf("value stored: %d\n", output)
 		mutex.Lock()
-			arduino_stat[s] = output
+		arduino_stat[s] = output
 		mutex.Unlock()
 		time.Sleep(time.Second)
 	}
 	check := comm2_arduino("S")
 	mutex.Lock()
-	arduino_stat["error"]=0
-	if check != "ok" {
-		log.Printf("Periodic check failed (%q)!\n",check)
-		arduino_stat["error"]=1
-	}
-	if check != "S?" {
-		arduino_stat["error"]=1
+	arduino_stat["check_error"] = 0
+	if strings.Index(check,"ok") == -1 { // check if the reply is what we asked
+		log.Printf("Periodic check failed (%q)!\n", check)
+		arduino_stat["check_error"] = 1
 	}
 	mutex.Unlock()
 }
@@ -114,10 +112,10 @@ func speak() {
 	sermon := "espeak -g 5 \"Please listen to the following stats:\n"
 	for k, v := range arduino_stat {
 		val := strconv.Itoa(v)
-		sermon = sermon + k +" is " + val + "\n"
+		sermon = sermon + k + " is " + val + "\n"
 	}
-	sermon = sermon +"\""
-	log.Printf("%s\n",sermon)
+	sermon = sermon + "\""
+	log.Printf("%s\n", sermon)
 	_, err := exec.Command("bash", "-c", sermon).Output()
 	if err != nil {
 		log.Fatal(err)
@@ -125,28 +123,40 @@ func speak() {
 }
 
 func human_presence() {
-        mutex.Lock()
-        presence := arduino_stat["P"]
-        mutex.Unlock()
+	mutex.Lock()
+	presence := arduino_stat["P"]
+	mutex.Unlock()
 	if presence == 1 {
 		speak()
 	}
-        time.Sleep(time.Minute)
+	time.Sleep(time.Minute)
 }
 
 func alarm_mgr(conf *config) {
-        time.Sleep(time.Minute) //wait for PIR initialization
-        mutex.Lock()
-        actual_temp := arduino_stat["T"]
-        mutex.Unlock()
-        if actual_temp < conf.Critical_temp  {
-                log.Printf("Alarm triggered!!\n")
-                pin := rpio.Pin(conf.Socket1)
-                pin.Output()
-                pin.High()
-                time.Sleep(time.Second)
-                pin.Low()
+	// Open and map memory to access gpio, check for errors
+	pin := rpio.Pin(conf.Alarm_pin)
+        if err := rpio.Open(); err != nil {
+                log.Fatal(err)
+                os.Exit(1)
         }
+	pin.Output()
+	pin.Low()
+        defer rpio.Close()
+	time.Sleep(time.Minute) //wait for PIR initialization
+	//set a x seconds ticker
+	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
+
+	for _ = range ticker.C {
+		mutex.Lock()
+		actual_temp := arduino_stat["T"]
+		mutex.Unlock()
+		if actual_temp < conf.Critical_temp {
+			log.Printf("Alarm triggered!!\n")
+			pin.High()
+			time.Sleep(time.Second*30)
+			pin.Low()
+		}
+	}
 }
 
 func prometheus_update() {
@@ -168,6 +178,7 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 	for k, v := range rpi_stat {
 		all_data[k] = v
 	}
+	all_data["failed_serial_read"]=failed_read
 	msg, _ := json.Marshal(all_data)
 	w.Write(msg)
 }
@@ -176,15 +187,15 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 
 	api_type := r.URL.Path
 	switch api_type {
-	case "/api/socket" :
-		socket,ok := r.URL.Query()["s1"]
+	case "/api/socket":
+		socket, ok := r.URL.Query()["s1"]
 		if ok {
 			if socket[0] != "" {
 				reply := command_socket(socket[0])
 				w.Write([]byte(reply))
 			}
 		}
-		socket2,ok := r.URL.Query()["s2"]
+		socket2, ok := r.URL.Query()["s2"]
 		if ok {
 			if socket2[0] != "" {
 				reply := command_socket(socket2[0])
@@ -192,16 +203,16 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-	case  "/api/arduino_reset" :
+	case "/api/arduino_reset":
 		comm2_arduino("X")
 
-	default :
-		log.Printf("Unknown Api (%s)!\n",api_type)
+	default:
+		log.Printf("Unknown Api (%s)!\n", api_type)
 		w.Write([]byte("Unknown Api"))
 	}
 }
 
-func command_socket(socket string) (reply string){
+func command_socket(socket string) (reply string) {
 	if socket == "on" {
 		gpio1 <- "on"
 		reply = "Turning ON"
@@ -288,8 +299,8 @@ func main() {
 			prometheus_update()
 		}
 	}()
-	go send_gpio1(conf,gpio1)
-	go send_gpio2(conf,gpio2)
+	go send_gpio1(conf, gpio1)
+	go send_gpio2(conf, gpio2)
 	go human_presence()
 	go alarm_mgr(conf)
 

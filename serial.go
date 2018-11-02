@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+
 func comm2_arduino(sensor string) (output string){
 	c := &serial.Config{Name: "/dev/ttyAMA0", Baud: 9600, ReadTimeout: time.Second * 5}
 	s, err := serial.OpenPort(c)
@@ -32,6 +33,7 @@ func comm2_arduino(sensor string) (output string){
 				output = strings.TrimSpace(reply) // strip end of line
 			} else {
 				log.Printf("Unexpected reply\n")
+				failed_read++
 				output = "0"
 			}
 		}
