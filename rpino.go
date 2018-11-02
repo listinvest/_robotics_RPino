@@ -102,6 +102,8 @@ func get_rpi_stat(verbose bool) {
 	}
 	oneminload_rounded, _ := strconv.Atoi(string(oneminload[0]))
 
+	//READ cat /sys/class/thermal/thermal_zone0/temp
+
 	mutex.Lock()
 	rpi_stat["wifi-signal"] = rand.Intn(100)
 	rpi_stat["1minload"] = oneminload_rounded

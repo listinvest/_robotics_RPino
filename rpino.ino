@@ -6,12 +6,16 @@ int LightPin = A0;
 int light = 0;
 int RainPin = A2;
 int rain = 0;
+int pirPin = 16;
+int ledPin = 13;
 DHT dht(DHTPin, DHT11);
 String incoming;
 String temp;
 String humidity;
 String dht_status;
-int ledPin = 13; 
+int pirValue;
+
+void(* resetFunc) (void) = 0;//declare reset function at address 0
 
 void setup() {
   Serial.begin(9600);
@@ -19,11 +23,8 @@ void setup() {
   dht.begin();
   Serial.println("RPino ready!");
   pinMode(ledPin, OUTPUT);
+  pinMode(pirPin, INPUT);
   digitalWrite(ledPin, LOW);
-}
-
-void softReset() {
-asm volatile ("  jmp 0");
 }
 
 void loop() {
@@ -33,7 +34,7 @@ void loop() {
     dht.read();
     switch(dht.getState()) {
       case DHT_OK:
-       temp = (int)dht.getTemperatureC();
+       temp = (int) dht.getTemperatureC();
        humidity = (int) dht.getHumidity();
        dht_status = "ok";
        break;
@@ -66,15 +67,25 @@ void loop() {
        Serial.print("H: ");
        Serial.println(humidity);
     }
+    if (incoming == "P?\n") {
+       pirValue = digitalRead(pirPin);
+       Serial.print("P: ");
+       Serial.println(pirValue);
+    }
+    if (incoming == "U?\n") {
+       Serial.print("U: ");
+       Serial.println(millis());
+    }
+    if (incoming == "X?\n") {
+        Serial.print("resetting..");
+        resetFunc();
+    }
     if (incoming == "S?\n") {
        Serial.print("S: ");
        Serial.println(dht_status);
        digitalWrite(ledPin, HIGH);
-       delay(1000);
-       digitalWrite(ledPin, LOW);
-    } 
-    if (incoming == "X?\n") {
-       softReset();
+      delay(1000);
+      digitalWrite(ledPin, LOW);
     }
   }  
   //Serial.println();
