@@ -25,14 +25,15 @@ func comm2_arduino(sensor string) (output string){
 		if err != nil {
 			log.Printf("%s\n",err)
 			output = "0"
-		//} else if n < 8 {
-		//	log.Printf("read less than 8 bytes (%d)\n",n)
-		//	output = "0"
-
 		} else {
 			log.Printf("Got: %s\n", string(buf))
-			reply := strings.Replace(string(buf),sensor+": ","",1 ) // need to check if it's the right reply
-			output = strings.TrimSpace(reply) // strip end of line
+			if strings.Index(string(buf),sensor) == 0 { // check if the reply is what we asked
+				reply := strings.Replace(string(buf),sensor+": ","",1 )
+				output = strings.TrimSpace(reply) // strip end of line
+			} else {
+				log.Printf("Unexpected reply\n")
+				output = "0"
+			}
 		}
 	s.Close()
 	return output

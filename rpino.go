@@ -122,12 +122,22 @@ func speak() {
 	}
 }
 
+func human_presence() {
+        mutex.Lock()
+        presence := arduino_stat["P"]
+        mutex.Unlock()
+	if presence == 1 {
+		speak()
+	}
+        time.Sleep(time.Minute)
+}
+
 func alarm_mgr(conf *config) {
         mutex.Lock()
-        actual_temp := arduino_stat['T']
+        actual_temp := arduino_stat["T"]
         mutex.Unlock()
-        if actual_temp conf.Critical_temp < {
-                log.Printf("Periodic check failed (%q)!\n",check)
+        if actual_temp < conf.Critical_temp  {
+                log.Printf("Alarm triggered!!\n")
                 pin := rpio.Pin(conf.Socket1)
                 pin.Output()
                 pin.High()
@@ -135,8 +145,6 @@ func alarm_mgr(conf *config) {
                 pin.Low()
         }
 }
-
-
 
 func prometheus_update() {
 	mutex.Lock()
@@ -275,11 +283,12 @@ func main() {
 			read_arduino(conf)
 			time.Sleep(time.Second)
 			prometheus_update()
-			speak()
 		}
 	}()
 	go send_gpio1(conf,gpio1)
 	go send_gpio2(conf,gpio2)
+	go human_presence()
+	go alarm_mgr(conf)
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)
