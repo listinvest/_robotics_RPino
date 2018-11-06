@@ -8,8 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stianeikeland/go-rpio"
 	"log"
-	//"math"
-	"math/rand"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -100,10 +98,25 @@ func get_rpi_stat(verbose bool) {
 	}
 	oneminload_rounded, _ := strconv.Atoi(string(oneminload[0]))
 
-	//READ cat /sys/class/thermal/thermal_zone0/temp
+	wifi_power := "iwconfig |awk '/Link Quality/  {print substr($2,9,2)}'"
+	wifi_stat, err := exec.Command("bash", "-c", wifi_power).Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	wifi_rounded, _ := strconv.Atoi(strings.TrimSpace(string(wifi_stat)))
 
+	//READ cat /sys/class/thermal/thermal_zone0/temp
+	//READ /proc/net/wireless
+	//READ /proc/uptime
+/*
+	stats, missing := ioutil.ReadFile(p)
+	fields := strings.Fields(string(stats))
+	x := len(p) - 5
+	process_name := fmt.Sprintf("%s(%s)", strings.Replace(strings.Replace(fields[1], "(", "", 1), ")", "", 1), p[6:x])
+	u_usage, _ := strconv.Atoi(fields[13])
+*/
 	mutex.Lock()
-	rpi_stat["wifi-signal"] = rand.Intn(100)
+	rpi_stat["wifi-signal"] = wifi_rounded
 	rpi_stat["1minload"] = oneminload_rounded
 	mutex.Unlock()
 }
@@ -141,6 +154,7 @@ func alarm_mgr(conf *config) {
         }
 	pin.Output()
 	pin.Low()
+        defer rpio.Close()
         defer rpio.Close()
 	time.Sleep(time.Minute) //wait for PIR initialization
 	//set a x seconds ticker
@@ -309,5 +323,4 @@ func main() {
 	http.HandleFunc("/json", json_stats)
 	http.HandleFunc("/main", mainpage)
 	log.Fatal(http.ListenAndServe(conf.Listen, nil))
-
 }
