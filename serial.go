@@ -25,7 +25,7 @@ func comm2_arduino(sensor string) (output string){
 		_, err = s.Read(buf)
 		if err != nil {
 			log.Printf("%s\n",err)
-			output = "0"
+			output = "null"
 		} else {
 			log.Printf("Got: %s\n", string(buf))
 			if strings.Index(string(buf),sensor) == 0 { // check if the reply is what we asked
@@ -34,7 +34,7 @@ func comm2_arduino(sensor string) (output string){
 			} else {
 				log.Printf("Unexpected reply\n")
 				failed_read++
-				output = "0"
+				output = "null"
 			}
 		}
 	s.Close()

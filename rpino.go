@@ -34,6 +34,7 @@ var RPIStat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 
 var (
 	verbose      bool
+	arduino_prev_stat map[string]int
 	arduino_stat map[string]int
 	rpi_stat     map[string]int
 	gpio1        chan (string)
@@ -67,14 +68,43 @@ func read_arduino(conf *config) {
 	for _, s := range conf.Arduino_sensors {
 		log.Printf("sent instruction for: %s", s)
 		reply := comm2_arduino(s)
-		output, err := strconv.Atoi(reply)
-		if err != nil {
-			log.Printf("Failed conversion: %s\n", err)
+		if reply != "null" {
+			output, err := strconv.Atoi(reply)
+			if err != nil {
+				log.Printf("Failed conversion: %s\n", err)
+				if arduino_prev_stat[s] != 0 {
+					mutex.Lock()
+					arduino_stat[s] = arduino_prev_stat[s]
+					mutex.Unlock()
+					arduino_prev_stat[s] = 0
+					log.Printf("failed read, using cached value\n")
+				} else {
+					log.Printf("failed read, cache value is zero, writing zero\n")
+					mutex.Lock()
+					arduino_stat[s] = 0
+					mutex.Unlock()
+				}
+			} else {
+				mutex.Lock()
+				arduino_stat[s] = output
+				mutex.Unlock()
+				arduino_prev_stat[s] = output
+				log.Printf("value stored: %d\n", output)
+			}
+		} else {
+			if arduino_prev_stat[s] != 0 {
+				mutex.Lock()
+				arduino_stat[s] = arduino_prev_stat[s]
+				mutex.Unlock()
+				arduino_prev_stat[s] = 0
+				log.Printf("failed read, using cached value\n")
+			} else {
+				log.Printf("failed read, cache value is zero, writing zero\n")
+				mutex.Lock()
+				arduino_stat[s] = 0
+				mutex.Unlock()
+			}
 		}
-		log.Printf("value stored: %d\n", output)
-		mutex.Lock()
-		arduino_stat[s] = output
-		mutex.Unlock()
 		time.Sleep(time.Second)
 	}
 	check := comm2_arduino("S")
