@@ -40,3 +40,14 @@ func comm2_arduino(sensor string) (output string){
 	s.Close()
 	return output
 }
+
+func flush_serial() {
+	c := &serial.Config{Name: "/dev/ttyAMA0", Baud: 9600, ReadTimeout: time.Second * 5}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	buf := make([]byte, 16)
+	_, err = s.Read(buf)
+	s.Close()
+}

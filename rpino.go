@@ -58,6 +58,7 @@ func init() {
 		log.Fatal(err)
 	}
 	arduino_stat = make(map[string]int)
+	arduino_prev_stat = make(map[string]int)
 	rpi_stat = make(map[string]int)
 }
 
@@ -329,6 +330,7 @@ func main() {
 		conf.Verbose = true
 	}
 	log.Printf("Metrics will be exposed on %s\n", conf.Listen)
+	flush_serial()
 	//set a x seconds ticker
 	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
 
