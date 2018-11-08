@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bytes"
+	//"bytes"
 	"log"
 	"github.com/tarm/serial"
 	"strings"
@@ -31,8 +31,8 @@ func comm2_arduino(sensor string) (output string){
 			log.Printf("Got: %s\n", string(buf))
 			if strings.Index(string(buf),sensor) == 0 { // check if the reply is what we asked
 				reply := strings.Replace(string(buf),sensor+": ","",1 )
-				//output = strings.TrimSpace(reply) // strip end of line
-				output = bytes.Trim(reply, "\x00") //strip null chars
+				reply = strings.TrimSpace(reply) // strip end of line
+				output = strings.Trim(reply, "\x00") //strip null chars
 			} else {
 				log.Printf("Unexpected reply\n")
 				failed_read++
