@@ -228,7 +228,7 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 	t := time.Now()
 	elapsed := t.Sub(start_time)
 	all_data["failed_serial_read"]=failed_read
-	all_data["rpino uptime"]=int(int64(elapsed)/60e9) // from nanoseconds to minutes
+	all_data["rpino uptime"]=int(elapsed.Minutes())
 	msg, _ := json.Marshal(all_data)
 	w.Write(msg)
 }
