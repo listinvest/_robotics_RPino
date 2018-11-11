@@ -123,33 +123,12 @@ func get_rpi_stat(verbose bool) {
 	if verbose {
 		log.Println("RPi stats")
 	}
-	cmd_load := "uptime | cut -d ' ' -f 11|cut -d '.' -f 1"
-	oneminload, err := exec.Command("bash", "-c", cmd_load).Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	oneminload_rounded, _ := strconv.Atoi(string(oneminload[0]))
-
-	wifi_power := "iwconfig |awk '/Link Quality/  {print substr($2,9,2)}'"
-	wifi_stat, err := exec.Command("bash", "-c", wifi_power).Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	wifi_rounded, _ := strconv.Atoi(strings.TrimSpace(string(wifi_stat)))
-
-	//READ cat /sys/class/thermal/thermal_zone0/temp
-	//READ /proc/net/wireless
-	//READ /proc/uptime
-/*
-	stats, missing := ioutil.ReadFile(p)
-	fields := strings.Fields(string(stats))
-	x := len(p) - 5
-	process_name := fmt.Sprintf("%s(%s)", strings.Replace(strings.Replace(fields[1], "(", "", 1), ")", "", 1), p[6:x])
-	u_usage, _ := strconv.Atoi(fields[13])
-*/
 	mutex.Lock()
-	rpi_stat["wifi-signal"] = wifi_rounded
-	rpi_stat["1minload"] = oneminload_rounded
+	rpi_stat["wifi-signal"] = get_wireless_signal()
+	d,h := get_uptime()
+	rpi_stat["uptime_days"] = d
+	rpi_stat["uptime_hours"] = h
+	rpi_stat["cput"] =  get_Cpu_temp()
 	mutex.Unlock()
 }
 
