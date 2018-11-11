@@ -41,6 +41,7 @@ var (
 	gpio2        chan (string)
 	arduino_in   chan (string) // questions to  Arduino
 	arduino_out  chan (string) // replies from Arduino
+	start_time   time.Time
 	failed_read int = 0
 )
 
@@ -223,7 +224,11 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 	for k, v := range rpi_stat {
 		all_data[k] = v
 	}
+	//add extra diagnostic fields
+	t := time.Now()
+	elapsed := t.Sub(start_time)
 	all_data["failed_serial_read"]=failed_read
+	all_data["rpino uptime"]=int(int64(elapsed)/60e9) // from nanoseconds to minutes
 	msg, _ := json.Marshal(all_data)
 	w.Write(msg)
 }
@@ -320,7 +325,7 @@ func main() {
 	confPath := flag.String("c", "cfg.cfg", "Configuration file")
 	verbose := flag.Bool("v", false, "Enable logging")
 	flag.Parse()
-
+	start_time = time.Now()
 	conf, err := loadConfig(*confPath)
 	if err != nil {
 		log.Fatalln(err)
