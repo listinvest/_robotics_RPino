@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stianeikeland/go-rpio"
 	"log"
+	//"math"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -206,8 +207,11 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 	//add extra diagnostic fields
 	t := time.Now()
 	elapsed := t.Sub(start_time)
+	hours := int(elapsed.Hours())
+	days := int(elapsed.Hours())/24
 	all_data["failed_serial_read"]=failed_read
-	all_data["rpino uptime"]=int(elapsed.Minutes())
+	all_data["rpino_uptime_days"]=days
+	all_data["rpino_uptime_hours"]=hours
 	msg, _ := json.Marshal(all_data)
 	w.Write(msg)
 }
