@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	toml "github.com/BurntSushi/toml"
 )
 
@@ -13,19 +13,20 @@ type config struct {
 	Critical_temp	  int	   `toml:"critical_temp"`
 	Alarm_pin	  int	   `toml:"alarm_pin"`
 	Arduino_sensors   []string  `toml:"arduino_sensors"`
+	Relevant_sensors   []string  `toml:"relevant_sensors"`
 	Verbose           bool     `toml:"verbose"`
 }
 
-func loadConfig(path string) (*config, error) {
+func loadConfig(path string) (*config) {
 	conf := &config{}
 	metaData, err := toml.DecodeFile(path, conf)
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 	for _, key := range metaData.Undecoded() {
-		fmt.Printf("unknown option %q\n", key.String())
+		log.Printf("unknown option %q\n", key.String())
 	}
 
-	return conf, nil
+	return conf
 }
 

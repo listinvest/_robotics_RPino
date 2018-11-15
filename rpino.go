@@ -44,6 +44,7 @@ var (
 	arduino_out  chan (string) // replies from Arduino
 	start_time   time.Time
 	failed_read int = 0
+	conf *config
 )
 
 var mutex = &sync.Mutex{}
@@ -64,7 +65,7 @@ func init() {
 	rpi_stat = make(map[string]int)
 }
 
-func read_arduino(conf *config) {
+func read_arduino() {
 	if conf.Verbose {
 		log.Println("Arduino stats")
 	}
@@ -134,10 +135,10 @@ func get_rpi_stat(verbose bool) {
 }
 
 func speak() {
-	sermon := "espeak -g 5 \"Please listen to the following stats:\n"
-	for k, v := range arduino_stat {
-		val := strconv.Itoa(v)
-		sermon = sermon + k + " is " + val + "\n"
+	sermon := "espeak -g 5 \"Hi, the status is:\n"
+	for _, v := range conf.Relevant_sensors {
+		val := strconv.Itoa(arduino_stat[v])
+		sermon = sermon + v + " is " + val + "\n"
 	}
 	sermon = sermon + "\""
 	log.Printf("%s\n", sermon)
@@ -149,7 +150,7 @@ func speak() {
 
 func human_presence() {
 	mutex.Lock()
-	presence := arduino_stat["P"]
+	presence := arduino_stat["U"]
 	mutex.Unlock()
 	if presence == 1 {
 		speak()
@@ -157,7 +158,7 @@ func human_presence() {
 	time.Sleep(time.Minute)
 }
 
-func alarm_mgr(conf *config) {
+func alarm_mgr() {
 	// Open and map memory to access gpio, check for errors
 	pin := rpio.Pin(conf.Alarm_pin)
         if err := rpio.Open(); err != nil {
@@ -166,7 +167,6 @@ func alarm_mgr(conf *config) {
         }
 	pin.Output()
 	pin.Low()
-        defer rpio.Close()
         defer rpio.Close()
 	time.Sleep(time.Minute) //wait for PIR initialization
 	//set a x seconds ticker
@@ -239,6 +239,9 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 	case "/api/arduino_reset":
 		comm2_arduino("X")
 
+	case "/api/speak":
+		speak()
+
 	default:
 		log.Printf("Unknown Api (%s)!\n", api_type)
 		w.Write([]byte("Unknown Api"))
@@ -267,14 +270,14 @@ func mainpage(w http.ResponseWriter, r *http.Request) {
          <h2>parameters '` + strings.Join(os.Args, " ") + `'</h2>
          <p><a href='/metrics'><b>Prometheus Metrics</b></a></p>
          <p><a href='/json'><b>JSON Metrics</b></a></p>
-         <p><a href='/socket'><b>Socket API endpoint</b></a></p>
+         <p><a href='/api'><b>API endpoint</b></a></p>
          </body>
          </html>
          `))
 
 }
 
-func send_gpio1(conf *config, gpio1 <-chan string) {
+func send_gpio1(gpio1 <-chan string) {
 	pin := rpio.Pin(conf.Socket1)
 	pin.Output()
 	for {
@@ -289,7 +292,7 @@ func send_gpio1(conf *config, gpio1 <-chan string) {
 	}
 }
 
-func send_gpio2(conf *config, gpio2 <-chan string) {
+func send_gpio2(gpio2 <-chan string) {
 	pin := rpio.Pin(conf.Socket2)
 	pin.Output()
 	for {
@@ -309,10 +312,7 @@ func main() {
 	verbose := flag.Bool("v", false, "Enable logging")
 	flag.Parse()
 	start_time = time.Now()
-	conf, err := loadConfig(*confPath)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	conf = loadConfig(*confPath)
 
 	if *verbose {
 		conf.Verbose = true
@@ -328,15 +328,15 @@ func main() {
 				log.Println("\nStats at", t)
 			}
 			get_rpi_stat(*verbose)
-			read_arduino(conf)
+			read_arduino()
 			time.Sleep(time.Second)
 			prometheus_update()
 		}
 	}()
-	go send_gpio1(conf, gpio1)
-	go send_gpio2(conf, gpio2)
+	go send_gpio1( gpio1)
+	go send_gpio2( gpio2)
 	go human_presence()
-	go alarm_mgr(conf)
+	go alarm_mgr()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)
