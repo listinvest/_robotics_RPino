@@ -15,6 +15,7 @@ type config struct {
 	Arduino_sensors   []string  `toml:"arduino_sensors"`
 	Relevant_sensors   []string  `toml:"relevant_sensors"`
 	Verbose           bool     `toml:"verbose"`
+	Speech            string   `toml:"speech"`
 }
 
 func loadConfig(path string) (*config) {
