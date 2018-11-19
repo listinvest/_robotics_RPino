@@ -17,14 +17,14 @@ int light = 0;
 //int rain = 0;
 unsigned long interval = 0;
 unsigned long beat = 0;
-int pirPin = A1; 
-int ledPin = 13; 
+int pirPin = A1;
+int ledPin = 13;
 DHT dht(DHTPin, DHT11);
-String incoming;
-String temp;
-String humidity;
-String dht_status;
+String incoming,temp,humidity,dht_status;
 int pirValue;
+double T,P,p0,a;
+// You will need to create an SFE_BMP180 object, here called "pressure":
+SFE_BMP180 pressure;
 
 void(* resetFunc) (void) = 0;//declare reset function at address 0
 
@@ -46,13 +46,16 @@ void setup() {
   // Setting frequency scaling to 20%
   digitalWrite(S0,HIGH);
   digitalWrite(S1,LOW);
-  
+  if (pressure.begin()) {
+    //Serial.println("BMP180 init success");
+  }
 }
 
 void loop() {
   
   if (Serial.available() > 0) {
     incoming = Serial.readStringUntil("\n");
+    char status;
     dht.read();
     switch(dht.getState()) {
       case DHT_OK:
@@ -96,7 +99,7 @@ void loop() {
     }
     if (incoming == "I?\n") {
        Serial.print("I: ");
-       if (interval ==I? 0) {
+       if (interval == 0) {
         Serial.println(0);
        } else {
         beat = millis() - interval;
@@ -123,7 +126,7 @@ void loop() {
     Frequency = pulseIn(sensorOut, LOW);
     Serial.print("R: ");
     Serial.println(Frequency);
-    } 
+    }
     if (incoming == "G?\n") {
     // Setting GREEN (R) filtered photodiodes to be read
     digitalWrite(S2,HIGH);
@@ -147,8 +150,23 @@ void loop() {
     Frequency = pulseIn(sensorOut, LOW);
     Serial.print("C: ");
     Serial.println(Frequency);
-    }              
-  }  
+    }
+    if (incoming == "A?\n") {
+     status = pressure.startPressure(3);
+      if (status != 0)
+      {
+        // Wait for the measurement to complete:
+        delay(status);
+        status = pressure.getPressure(P,T);
+        if (status != 0)
+         {
+           // Print out the measurement:
+           Serial.print("A: ");
+           Serial.println(round(P));
+          }  
+        }
+      }  
   //Serial.println();
   delay(1000);
+ }
 }
