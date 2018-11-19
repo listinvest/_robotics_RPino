@@ -20,7 +20,7 @@ func get_uptime() (days,hours int){
 	seconds := int(math.Round(uptime))
 	days = seconds/86400
 	hours = (seconds%86400)/3600
-	fmt.Printf("days:%d hours:%d\n",days,hours)
+	//fmt.Printf("days:%d hours:%d\n",days,hours)
 	return days,hours
 }
 
@@ -32,7 +32,7 @@ func get_wireless_signal() (w int){
 	}
 	fields := strings.Fields(string(stats))
 	w,_ = strconv.Atoi(strings.TrimSuffix(fields[29],"."))
-	fmt.Printf("wifi: %d \n",w)
+	//fmt.Printf("wifi: %d \n",w)
 	return w
 }
 
@@ -50,6 +50,6 @@ func get_Cpu_temp() (t int){
 	if missing != nil {
             fmt.Println(missing)
 	}
-	fmt.Printf("CPU T: %d\n",int(t))
+	//fmt.Printf("CPU T: %d\n",int(t))
 	return int(t)
 }

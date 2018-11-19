@@ -135,7 +135,7 @@ func get_rpi_stat(verbose bool) {
 }
 
 func speak() {
-	sermon := "espeak -g 5 conf.Speech
+	sermon := "espeak -g 5 conf.Speech"
 	for _, v := range conf.Relevant_sensors {
 		val := strconv.Itoa(arduino_stat[v])
 		sermon = sermon + v + " is " + val + "\n"
