@@ -13,8 +13,9 @@ type config struct {
 	Critical_temp	  int	   `toml:"critical_temp"`
 	Alarm_pin	  int	   `toml:"alarm_pin"`
 	Arduino_sensors   []string  `toml:"arduino_sensors"`
-	Relevant_sensors   []string  `toml:"relevant_sensors"`
+	Relevant_sensors  []string  `toml:"relevant_sensors"`
 	Verbose           bool     `toml:"verbose"`
+	Zero_unreadable   bool     `toml:"zero_unreadable"`
 	Speech            string   `toml:"speech"`
 }
 

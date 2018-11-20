@@ -80,7 +80,7 @@ func read_arduino() {
 					mutex.Lock()
 					arduino_stat[s] = arduino_prev_stat[s]
 					mutex.Unlock()
-					arduino_prev_stat[s] = 0
+					if conf.Zero_unreadable { arduino_prev_stat[s] = 0 }
 					log.Printf("failed read, using cached value\n")
 				} else {
 					log.Printf("failed read, cache value is zero, writing zero\n")
@@ -100,7 +100,7 @@ func read_arduino() {
 				mutex.Lock()
 				arduino_stat[s] = arduino_prev_stat[s]
 				mutex.Unlock()
-				arduino_prev_stat[s] = 0
+				if conf.Zero_unreadable { arduino_prev_stat[s] = 0 }
 				log.Printf("failed read, using cached value\n")
 			} else {
 				log.Printf("failed read, cache value is zero, writing zero\n")
