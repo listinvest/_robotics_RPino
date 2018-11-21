@@ -89,6 +89,13 @@ func read_arduino() {
 					mutex.Unlock()
 				}
 			} else {
+				lower := float32(arduino_prev_stat[s])*(0.7)
+				upper := float32(arduino_prev_stat[s])*(1.3)
+				_,ok := arduino_prev_stat[s]
+				if ok && (float32(output) < lower || float32(output) > upper) {
+					log.Printf("value outside safe boundaries: %f - %f, using cached value\n",  lower,upper)
+					arduino_stat[s] = arduino_prev_stat[s]
+				}
 				mutex.Lock()
 				arduino_stat[s] = output
 				mutex.Unlock()
@@ -207,7 +214,7 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 	//add extra diagnostic fields
 	t := time.Now()
 	elapsed := t.Sub(start_time)
-	hours := int(elapsed.Hours())
+	hours := int(elapsed.Hours())%24
 	days := int(elapsed.Hours())/24
 	all_data["failed_serial_read"]=failed_read
 	all_data["rpino_uptime_days"]=days
