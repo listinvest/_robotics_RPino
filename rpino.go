@@ -95,11 +95,12 @@ func read_arduino() {
 				if ok && (float32(output) < lower || float32(output) > upper) {
 					log.Printf("value outside safe boundaries: %f - %f, using cached value\n",  lower,upper)
 					arduino_stat[s] = arduino_prev_stat[s]
+				} else {
+					arduino_prev_stat[s] = output
 				}
 				mutex.Lock()
 				arduino_stat[s] = output
 				mutex.Unlock()
-				arduino_prev_stat[s] = output
 				log.Printf("value stored: %d\n", output)
 			}
 		} else {
