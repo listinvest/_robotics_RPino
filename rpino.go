@@ -92,9 +92,14 @@ func read_arduino() {
 				lower := float32(arduino_prev_stat[s])*(0.7)
 				upper := float32(arduino_prev_stat[s])*(1.3)
 				_,ok := arduino_prev_stat[s]
-				if ok && (float32(output) < lower || float32(output) > upper) {
-					log.Printf("value outside safe boundaries: %f - %f, using cached value\n",  lower,upper)
+				if ok && float32(output) < lower {
+					log.Printf("value is lower than safe boundaries: %f , using cached value\n", lower)
 					arduino_stat[s] = arduino_prev_stat[s]
+					arduino_prev_stat[s]= int(float32(output)*(0.9))
+				} else if ok && float32(output) > upper{
+					log.Printf("value is higher than safe boundaries: %f , using cached value\n", upper)
+					arduino_stat[s] = arduino_prev_stat[s]
+					arduino_prev_stat[s]= int(float32(output)*(1.1))
 				} else {
 					arduino_prev_stat[s] = output
 				}
