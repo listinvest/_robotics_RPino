@@ -32,6 +32,7 @@ func comm2_arduino(sensor string) (output string){
 			if strings.Index(string(buf),sensor) == 0 { // check if the reply is what we asked
 				reply := strings.Replace(string(buf),sensor+": ","",1 )
 				reply = strings.TrimSpace(reply) // strip end of line
+				good_read++
 				output = strings.Trim(reply, "\x00") //strip null chars
 			} else {
 				log.Printf("Unexpected reply\n")
