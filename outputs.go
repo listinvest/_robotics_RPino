@@ -2,10 +2,8 @@ package main
 
 import (
 	"log"
-	//"math"
 	"os"
 	"os/exec"
-	//"sort"
 	"sync"
 	"strconv"
 	"time"
@@ -16,8 +14,6 @@ import (
 var (
 	gpio1        chan (string)
 	gpio2        chan (string)
-//	arduino_in   chan (string) // questions to  Arduino
-//	arduino_out  chan (string) // replies from Arduino
 )
 
 var lock = &sync.Mutex{}
@@ -30,7 +26,6 @@ func init() {
 		log.Fatal(err)
 	}
 }
-
 
 func speak() {
 	sermon := "espeak -g 5 conf.Speech"

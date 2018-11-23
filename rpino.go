@@ -1,20 +1,14 @@
 package main
 
 import (
-	//"fmt"
 	"flag"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stianeikeland/go-rpio"
 	"log"
-	//"math"
 	"net/http"
 	_ "net/http/pprof"
-	//"os"
-	//"os/exec"
-	//"sort"
 	"sync"
-	//"sync/atomic"
 	"strconv"
 	"strings"
 	"time"

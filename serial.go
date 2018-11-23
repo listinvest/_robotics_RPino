@@ -1,13 +1,11 @@
 package main
 
 import (
-	//"bytes"
 	"log"
 	"github.com/tarm/serial"
 	"strings"
 	"time"
 )
-
 
 func comm2_arduino(sensor string) (output string){
 	c := &serial.Config{Name: "/dev/ttyAMA0", Baud: 9600, ReadTimeout: time.Second * 5}
