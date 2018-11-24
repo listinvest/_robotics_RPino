@@ -34,8 +34,8 @@ var (
 	arduino_in   chan (string) // questions to  Arduino
 	arduino_out  chan (string) // replies from Arduino
 	start_time   time.Time
-	good_read int = 0
-	failed_read int = 0
+	good_read int = 1
+	failed_read int = 1
 	conf *config
 )
 
