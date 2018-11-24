@@ -11,9 +11,11 @@ type config struct {
 	Socket2           int      `toml:"socket2"`
 	Poll_interval	  int	   `toml:"poll_interval"`
 	Critical_temp	  int	   `toml:"critical_temp"`
+	Upper_limit	  float32  `toml:"upper_limit"`
+	Lower_limit	  float32  `toml:"lower_limit"`
 	Alarm_pin	  int	   `toml:"alarm_pin"`
-	Arduino_sensors   []string  `toml:"arduino_sensors"`
-	Relevant_sensors  []string  `toml:"relevant_sensors"`
+	Arduino_sensors   []string `toml:"arduino_sensors"`
+	Relevant_sensors  []string `toml:"relevant_sensors"`
 	Verbose           bool     `toml:"verbose"`
 	Zero_unreadable   bool     `toml:"zero_unreadable"`
 	Speech            string   `toml:"speech"`
