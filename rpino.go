@@ -167,15 +167,15 @@ func main() {
 		conf.Verbose = true
 	}
 	log.Printf("Metrics will be exposed on %s\n", conf.Listen)
+	if *verbose {
+		log.Printf("Verbose logging is enabled")
+	}
 	flush_serial()
 	//set a x seconds ticker
 	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
-
+	var t time.Time
 	go func() {
-		for t := range ticker.C {
-			if *verbose {
-				log.Println("\nStats at", t)
-			}
+		for t = range ticker.C {
 			get_rpi_stat(*verbose)
 			read_arduino()
 			time.Sleep(time.Second)

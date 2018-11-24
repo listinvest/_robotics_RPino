@@ -19,14 +19,14 @@ func comm2_arduino(sensor string) (output string){
 		if err != nil {
 			log.Printf("%s\n",err)
 		}
-		log.Printf("Asked: %s \n", cmd)
+		if conf.Verbose { log.Printf("Asked: %s", cmd) }
 		buf := make([]byte, 7)
 		_, err = s.Read(buf)
 		if err != nil {
 			log.Printf("%s\n",err)
 			output = "null"
 		} else {
-			log.Printf("Got: %s\n", string(buf))
+			if conf.Verbose { log.Printf("Got: %s", string(buf)) }
 			if strings.Index(string(buf),sensor) == 0 { // check if the reply is what we asked
 				reply := strings.Replace(string(buf),sensor+": ","",1 )
 				reply = strings.TrimSpace(reply) // strip end of line
