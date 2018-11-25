@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"sync"
 	"strconv"
 	"strings"
@@ -25,6 +26,12 @@ var RPIStat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "RPI stats",
 },
 	[]string{"rpi"})
+
+var SerialStat = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "SerialStats",
+	Help: "Serial stats",
+},
+	[]string{"type"})
 
 var (
 	verbose      bool
@@ -44,6 +51,7 @@ var mutex = &sync.Mutex{}
 func init() {
 	prometheus.MustRegister(SensorStat)
 	prometheus.MustRegister(RPIStat)
+	prometheus.MustRegister(SerialStat)
 	gpio1 = make(chan string)
 	gpio2 = make(chan string)
 	arduino_in = make(chan string)
@@ -89,13 +97,13 @@ func read_arduino() {
 					mutex.Lock()
 					arduino_stat[s] = arduino_prev_stat[s]
 					mutex.Unlock()
-					arduino_prev_stat[s]= int(float32(arduino_prev_stat[s])*(conf.Lower_limit/2))
+					//arduino_prev_stat[s]= int(float32(arduino_prev_stat[s])*(conf.Lower_limit/2))
 				} else if ok && float32(output) > upper {
 					log.Printf("%s value is higher than safe boundaries: %f , using cached value\n",s, upper)
 					mutex.Lock()
 					arduino_stat[s] = arduino_prev_stat[s]
 					mutex.Unlock()
-					arduino_prev_stat[s]= int(float32(arduino_prev_stat[s])*(conf.Upper_limit/2))
+					//arduino_prev_stat[s]= int(float32(arduino_prev_stat[s])*(conf.Upper_limit/2))
 				} else {
 					mutex.Lock()
 					arduino_prev_stat[s] = output
@@ -152,6 +160,10 @@ func prometheus_update() {
 	for k, v := range rpi_stat {
 		RPIStat.WithLabelValues(k).Set(float64(v))
 	}
+	SerialStat.WithLabelValues("Good").Add(float64(good_read))
+	good_read = 0
+	SerialStat.WithLabelValues("Bad").Add(float64(failed_read))
+	failed_read = 0
 	mutex.Unlock()
 }
 
@@ -173,13 +185,13 @@ func main() {
 	flush_serial()
 	//set a x seconds ticker
 	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
-	var t time.Time
 	go func() {
-		for t = range ticker.C {
+		for t := range ticker.C {
 			get_rpi_stat(*verbose)
 			read_arduino()
 			time.Sleep(time.Second)
 			prometheus_update()
+			os.Stderr.WriteString(t.String())
 		}
 	}()
 	go send_gpio1( gpio1)
