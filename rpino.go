@@ -76,6 +76,7 @@ func read_arduino() {
 			output, err := strconv.Atoi(reply)
 			if err != nil {
 				log.Printf("Failed conversion: %s\n", err)
+				failed_read++
 				if arduino_prev_stat[s] != 0 {
 					mutex.Lock()
 					arduino_stat[s] = arduino_prev_stat[s]
