@@ -98,13 +98,13 @@ func read_arduino() {
 					mutex.Lock()
 					arduino_stat[s] = arduino_prev_stat[s]
 					mutex.Unlock()
-					//arduino_prev_stat[s]= int(float32(arduino_prev_stat[s])*(conf.Lower_limit/2))
+					arduino_prev_stat[s]= int(upper)
 				} else if ok && float32(output) > upper {
 					log.Printf("%s value is higher than safe boundaries: %f , using cached value\n",s, upper)
 					mutex.Lock()
 					arduino_stat[s] = arduino_prev_stat[s]
 					mutex.Unlock()
-					//arduino_prev_stat[s]= int(float32(arduino_prev_stat[s])*(conf.Upper_limit/2))
+					arduino_prev_stat[s]= int(lower)
 				} else {
 					mutex.Lock()
 					arduino_prev_stat[s] = output
