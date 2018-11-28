@@ -24,6 +24,7 @@ func comm2_arduino(sensor string) (output string){
 		_, err = s.Read(buf)
 		if err != nil {
 			log.Printf("%s\n",err)
+			failed_read++
 			output = "null"
 		} else {
 			if conf.Verbose { log.Printf("Got: %s", string(buf)) }

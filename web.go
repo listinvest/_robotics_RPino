@@ -22,7 +22,7 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 	elapsed := t.Sub(start_time)
 	hours := int(elapsed.Hours())%24
 	days := int(elapsed.Hours())/24
-	all_data["quality_serial"]=int((failed_read*100)/(failed_read+good_read))
+	all_data["quality_serial"]=int((good_read*100)/(failed_read+good_read))
 	all_data["rpino_uptime_days"]=days
 	all_data["rpino_uptime_hours"]=hours
 	msg, _ := json.Marshal(all_data)
