@@ -17,8 +17,6 @@ Components
 The whole solutions uses few tightly integrated components and this schema illustrates all of them:
 
 Wifi  <— RaspberryPi -->  Arduino Uno —>  custom shield -> Sensors
-
-
                             \—>  GPIO
 
 Data Flow
@@ -50,8 +48,12 @@ Web interfaces:
 Access via HTTP allows you to gather lots of information
 
 /metrics for Prometheus
+
 /json for compact status
+
 /api/socket for power socket mgmt
+
 /api/arduino_reset for ..guess?
+
 /profiler statistics
 
