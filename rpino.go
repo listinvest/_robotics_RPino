@@ -62,7 +62,6 @@ func init() {
 	}
 	rpi_stat = make(map[string]int)
 
-	
 }
 
 func read_arduino() {
@@ -89,11 +88,15 @@ func read_arduino() {
 					arduino_stat[s] = output
 					mutex.Unlock()
 					arduino_prev_stat[s] = output
-			
 				} else {
 					lower := float32(arduino_prev_stat[s]) * conf.Lower_limit
 					upper := float32(arduino_prev_stat[s]) * conf.Upper_limit
-					if  float32(output) >= lower && float32(output) <= upper {
+					if output <= 10 {
+						log.Printf("Saving tiny value (%d)\n",output)
+						mutex.Lock()
+						arduino_stat[s] = output
+						mutex.Unlock()
+					} else if  float32(output) >= lower && float32(output) <= upper {
 						log.Printf("%s value is within the safe boundaries( %f - %f )\n",s, lower, upper)
 						mutex.Lock()
 						arduino_stat[s] = output
@@ -103,7 +106,7 @@ func read_arduino() {
 					} else {
 						log.Printf("%s value is outside the safe boundaries( %f - %f ), using cached value %d\n", s, lower, upper, arduino_prev_stat[s])
 						mutex.Lock()
-						arduino_stat[s] = arduino_prev_stat[s] 
+						arduino_stat[s] = arduino_prev_stat[s]
 						log.Printf("value stored: %d\n", output)
 						mutex.Unlock()
 					}
