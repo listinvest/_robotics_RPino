@@ -60,9 +60,9 @@ func init() {
 	if err := rpio.Open(); err != nil {
 		log.Fatal(err)
 	}
-	arduino_stat = make(map[string]int)
-	arduino_prev_stat = make(map[string]int)
 	rpi_stat = make(map[string]int)
+
+	
 }
 
 func read_arduino() {
@@ -81,51 +81,42 @@ func read_arduino() {
 					mutex.Lock()
 					arduino_stat[s] = arduino_prev_stat[s]
 					mutex.Unlock()
-					if conf.Zero_unreadable { arduino_prev_stat[s] = 0 }
 					log.Printf("failed read, using cached value\n")
-				} else {
-					log.Printf("failed read, cache value is zero, writing zero\n")
-					mutex.Lock()
-					arduino_stat[s] = 0
-					mutex.Unlock()
 				}
 			} else {
-				lower := float32(arduino_prev_stat[s]) * conf.Lower_limit
-				upper := float32(arduino_prev_stat[s]) * conf.Upper_limit
-				_,ok := arduino_prev_stat[s]
-				if ok && float32(output) < lower {
-					log.Printf("%s value is lower than safe boundaries: %f , using cached value\n",s, lower)
+				if arduino_prev_stat[s] == 0 {
 					mutex.Lock()
-					arduino_stat[s] = arduino_prev_stat[s]
-					mutex.Unlock()
-					arduino_prev_stat[s]= int(upper)
-				} else if ok && float32(output) > upper {
-					log.Printf("%s value is higher than safe boundaries: %f , using cached value\n",s, upper)
-					mutex.Lock()
-					arduino_stat[s] = arduino_prev_stat[s]
-					mutex.Unlock()
-					arduino_prev_stat[s]= int(lower)
-				} else {
-					mutex.Lock()
-					arduino_prev_stat[s] = output
-					log.Printf("value stored: %d\n", output)
 					arduino_stat[s] = output
 					mutex.Unlock()
+					arduino_prev_stat[s] = output
+			
+				} else {
+					lower := float32(arduino_prev_stat[s]) * conf.Lower_limit
+					upper := float32(arduino_prev_stat[s]) * conf.Upper_limit
+					if  float32(output) >= lower && float32(output) <= upper {
+						log.Printf("%s value is within the safe boundaries( %f - %f )\n",s, lower, upper)
+						mutex.Lock()
+						arduino_stat[s] = output
+						mutex.Unlock()
+						arduino_prev_stat[s]= output
+
+					} else {
+						log.Printf("%s value is outside the safe boundaries( %f - %f ), using cached value %d\n", s, lower, upper, arduino_prev_stat[s])
+						mutex.Lock()
+						arduino_stat[s] = arduino_prev_stat[s] 
+						log.Printf("value stored: %d\n", output)
+						mutex.Unlock()
+					}
 				}
 			}
 		} else {
 			if arduino_prev_stat[s] != 0 {
+				log.Printf("failed read, using cached value\n")
 				mutex.Lock()
 				arduino_stat[s] = arduino_prev_stat[s]
 				mutex.Unlock()
-				if conf.Zero_unreadable { arduino_prev_stat[s] = 0 }
-				log.Printf("failed read, using cached value\n")
-			} else {
-				log.Printf("failed read, cache value is zero, writing zero\n")
-				mutex.Lock()
-				arduino_stat[s] = 0
-				mutex.Unlock()
 			}
+			failed_read++
 		}
 
 		time.Sleep(time.Second)
@@ -179,6 +170,18 @@ func main() {
 	if *verbose {
 		conf.Verbose = true
 	}
+
+	n := len(conf.Arduino_sensors)
+	arduino_stat = make(map[string]int,n)
+	arduino_prev_stat = make(map[string]int,n)
+	for k,_ := range arduino_stat {
+		arduino_stat[k]=0
+	}
+	for k,_ := range arduino_prev_stat {
+		arduino_prev_stat[k]=0
+	}
+
+
 	log.Printf("Metrics will be exposed on %s\n", conf.Listen)
 	if *verbose {
 		log.Printf("Verbose logging is enabled")
