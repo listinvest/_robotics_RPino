@@ -28,27 +28,37 @@ func init() {
 }
 
 func speak() {
-	sermon := "espeak -g 5 conf.Speech"
+	longv := ""
+	sermon := "espeak -g 5 \"" + conf.Speech + ".\n"
 	for _, v := range conf.Relevant_sensors {
 		val := strconv.Itoa(arduino_stat[v])
-		sermon = sermon + v + " is " + val + "\n"
+		if v == "H" { longv = "humidity"}
+		if v == "T" { longv = "temperature"}
+		sermon = sermon + longv + " is " + val + ".\n"
 	}
 	sermon = sermon + "\""
 	log.Printf("%s\n", sermon)
-	_, err := exec.Command("bash", "-c", sermon).Output()
+	cmd := exec.Command("bash", "-c", sermon)
+	err := cmd.Start()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("error for speaking")
 	}
 }
 
 func human_presence() {
-	lock.Lock()
-	presence := arduino_stat["U"]
-	lock.Unlock()
-	if presence == 1 {
-		speak()
+	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
+	for t := range ticker.C {
+		os.Stderr.WriteString(t.String())
+		lock.Lock()
+		presence := arduino_stat["U"]
+		lock.Unlock()
+		if presence == 1 {
+			if conf.Verbose { log.Printf("Human detected\n")}
+			speak()
+		} else {
+			if conf.Verbose { log.Printf("Human NOT detected\n")}
+		}
 	}
-	time.Sleep(time.Minute)
 }
 
 func alarm_mgr() {

@@ -9,7 +9,7 @@ import (
 )
 
 func comm2_arduino(sensor string) (output string){
-	c := &serial.Config{Name: "/dev/ttyAMA0", Baud: 9600, ReadTimeout: time.Second * 5}
+	c := &serial.Config{Name: "/dev/ttyAMA0", Baud: 9600, ReadTimeout: time.Millisecond * 1750}
 	s, err := serial.OpenPort(c)
 	if err != nil {
 		log.Fatal(err)
@@ -21,15 +21,15 @@ func comm2_arduino(sensor string) (output string){
 		log.Printf("%s\n",err)
 	}
 	if conf.Verbose { log.Printf("Asked: %s", cmd) }
-	buf := make([]byte, 7)
-	_, err = s.Read(buf)
-	if err != nil {
-		log.Printf("%s\n",err)
+	buf := make([]byte, 8)
+	nbytes, failed := s.Read(buf)
+	if failed != nil {
+		log.Printf("error: %s\n",failed)
 		failed_read++
 		output = "null"
 	} else {
 		reply := string(buf)
-		//if conf.Verbose { log.Printf("Got: %s", reply) }
+		if conf.Verbose { log.Printf("Got %d bytes: %s", nbytes,reply) }
 		if strings.Index(reply,sensor) == 0 { // check if the reply is what we asked
 			if sensor == "S" {
 				return "ok"

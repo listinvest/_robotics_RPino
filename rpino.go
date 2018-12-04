@@ -68,9 +68,10 @@ func read_arduino() {
 	if conf.Verbose {
 		log.Println("Arduino stats")
 	}
+	reply := ""
 	for _, s := range conf.Arduino_sensors {
 		log.Printf("sent instruction for: %s", s)
-		reply := comm2_arduino(s)
+		reply = comm2_arduino(s)
 		if reply != "null" {
 			output, err := strconv.Atoi(reply)
 			if err != nil {
@@ -122,8 +123,9 @@ func read_arduino() {
 			}
 			failed_read++
 		}
+		reply = ""
 
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 2)
 	}
 	check := comm2_arduino("S")
 	mutex.Lock()
@@ -135,8 +137,8 @@ func read_arduino() {
 	mutex.Unlock()
 }
 
-func get_rpi_stat(verbose bool) {
-	if verbose {
+func get_rpi_stat() {
+	if conf.Verbose {
 		log.Println("RPi stats")
 	}
 	mutex.Lock()
@@ -187,7 +189,7 @@ func main() {
 
 
 	log.Printf("Metrics will be exposed on %s\n", conf.Listen)
-	if *verbose {
+	if conf.Verbose {
 		log.Printf("Verbose logging is enabled")
 	}
 	flush_serial()
@@ -195,7 +197,7 @@ func main() {
 	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
 	go func() {
 		for t := range ticker.C {
-			get_rpi_stat(*verbose)
+			get_rpi_stat()
 			read_arduino()
 			time.Sleep(time.Second)
 			prometheus_update()
