@@ -29,7 +29,7 @@ func comm2_arduino(sensor string) (output string){
 		output = "null"
 	} else {
 		reply := string(buf)
-		if conf.Verbose { log.Printf("Got: %s", reply) }
+		//if conf.Verbose { log.Printf("Got: %s", reply) }
 		if strings.Index(reply,sensor) == 0 { // check if the reply is what we asked
 			if sensor == "S" {
 				return "ok"

@@ -31,8 +31,12 @@ func get_wireless_signal() (w int){
             fmt.Println("missing")
 	}
 	fields := strings.Fields(string(stats))
-	w,_ = strconv.Atoi(strings.TrimSuffix(fields[29],"."))
-	//fmt.Printf("wifi: %d \n",w)
+	if len(fields) > 29 {
+		w,_ = strconv.Atoi(strings.TrimSuffix(fields[29],"."))
+	} else {
+		//fmt.Printf("wifi: %d \n",w)
+		w = 0
+	}
 	return w
 }
 
@@ -44,7 +48,6 @@ func get_Cpu_temp() (t int){
             fmt.Println("missing")
 	}
         temp := strings.TrimSpace(string(stats))
-	//t, missing = strconv.ParseInt(temp,10,32)
 	t, missing = strconv.Atoi(temp)
 	t /= 1000
 	if missing != nil {
