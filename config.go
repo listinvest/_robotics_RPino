@@ -11,6 +11,8 @@ type config struct {
 	Socket2           int      `toml:"socket2"`
 	Poll_interval	  int	   `toml:"poll_interval"`
 	Critical_temp	  int	   `toml:"critical_temp"`
+	Depth		  int	   `toml:"historic_depth"`
+	Percentile	  float32  `toml:"percentile"`
 	Upper_limit	  float32  `toml:"upper_limit"`
 	Lower_limit	  float32  `toml:"lower_limit"`
 	Alarm_pin	  int	   `toml:"alarm_pin"`
