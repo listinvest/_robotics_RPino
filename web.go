@@ -11,7 +11,10 @@ import (
 
 func json_stats(w http.ResponseWriter, r *http.Request) {
 	all_data := make(map[string]int)
-	for k, v := range arduino_stat {
+	for k, v := range arduino_linear_stat {
+		all_data[k] = v
+	}
+	for k, v := range arduino_exp_stat {
 		all_data[k] = v
 	}
 	for k, v := range rpi_stat {

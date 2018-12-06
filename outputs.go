@@ -31,7 +31,7 @@ func speak() {
 	longv := ""
 	sermon := "espeak -g 5 \"" + conf.Speech + ".\n"
 	for _, v := range conf.Relevant_sensors {
-		val := strconv.Itoa(arduino_stat[v])
+		val := strconv.Itoa(arduino_linear_stat[v])
 		if v == "H" { longv = "humidity"}
 		if v == "T" { longv = "temperature"}
 		sermon = sermon + longv + " is " + val + ".\n"
@@ -50,7 +50,7 @@ func human_presence() {
 	for t := range ticker.C {
 		os.Stderr.WriteString(t.String())
 		lock.Lock()
-		presence := arduino_stat["U"]
+		presence := arduino_linear_stat["U"]
 		lock.Unlock()
 		if presence == 1 {
 			if conf.Verbose { log.Printf("Human detected\n")}
@@ -77,7 +77,7 @@ func alarm_mgr() {
 
 	for _ = range ticker.C {
 		lock.Lock()
-		actual_temp := arduino_stat["T"]
+		actual_temp := arduino_linear_stat["T"]
 		lock.Unlock()
 		if actual_temp < conf.Critical_temp {
 			log.Printf("Alarm triggered!!\n")

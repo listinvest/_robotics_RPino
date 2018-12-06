@@ -47,32 +47,49 @@ func main() {
 */
 
 func nsamples(sensor string)(num int){
-	num = len(arduino_prev_stat[sensor])
+	num = len(arduino_prev_linear_stat[sensor])
 	return num
 }
 
-func last(sensor string)(num int){
-	lenght := len(arduino_prev_stat[sensor])-1
-	num = arduino_prev_stat[sensor][lenght]
+func last_linear(sensor string)(num int){
+	lenght := len(arduino_prev_linear_stat[sensor])-1
+	num = arduino_prev_linear_stat[sensor][lenght]
 	return num
 }
 
-func add(sensor string, value int) {
-	lenght := len(arduino_prev_stat[sensor])
-	arduino_prev_stat[sensor] = append(arduino_prev_stat[sensor],value)
+func last_exp(sensor string)(num int){
+	lenght := len(arduino_prev_exp_stat[sensor])-1
+	num = arduino_prev_exp_stat[sensor][lenght]
+	return num
+}
+
+
+func add_linear(sensor string, value int) {
+	lenght := len(arduino_prev_linear_stat[sensor])
+	arduino_prev_linear_stat[sensor] = append(arduino_prev_linear_stat[sensor],value)
 	//removing oldest value
 	if lenght >= conf.Depth {
-		arduino_prev_stat[sensor] = arduino_prev_stat[sensor][1:]
+		arduino_prev_linear_stat[sensor] = arduino_prev_linear_stat[sensor][1:]
+	}
+
+}
+
+func add_exp(sensor string, value int) {
+	lenght := len(arduino_prev_exp_stat[sensor])
+	arduino_prev_exp_stat[sensor] = append(arduino_prev_exp_stat[sensor],value)
+	//removing oldest value
+	if lenght >= conf.Depth {
+		arduino_prev_exp_stat[sensor] = arduino_prev_exp_stat[sensor][1:]
 	}
 
 }
 
 func reference(sensor string) (ref int) {
-	lenght := float32(len(arduino_prev_stat[sensor]))
-	sort.Ints(arduino_prev_stat[sensor])
+	lenght := float32(len(arduino_prev_linear_stat[sensor]))
+	sort.Ints(arduino_prev_linear_stat[sensor])
 	ref = int(lenght * conf.Percentile)
-	if verbose { fmt.Printf("index %d, value: %d\n",ref,arduino_prev_stat[sensor][ref]) }
-	return arduino_prev_stat[sensor][ref]
+	if verbose { fmt.Printf("index %d, value: %d\n",ref,arduino_prev_linear_stat[sensor][ref]) }
+	return arduino_prev_linear_stat[sensor][ref]
 }
 
 

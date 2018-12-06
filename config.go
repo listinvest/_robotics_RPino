@@ -16,7 +16,8 @@ type config struct {
 	Upper_limit	  float32  `toml:"upper_limit"`
 	Lower_limit	  float32  `toml:"lower_limit"`
 	Alarm_pin	  int	   `toml:"alarm_pin"`
-	Arduino_sensors   []string `toml:"arduino_sensors"`
+	Arduino_linear_sensors   []string `toml:"arduino_linear_sensors"`
+	Arduino_exp_sensors   []string `toml:"arduino_exp_sensors"`
 	Relevant_sensors  []string `toml:"relevant_sensors"`
 	Verbose           bool     `toml:"verbose"`
 	Zero_unreadable   bool     `toml:"zero_unreadable"`
