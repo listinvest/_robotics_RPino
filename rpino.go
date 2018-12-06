@@ -73,7 +73,7 @@ func read_arduino() {
 	reply := ""
 	for _, s := range conf.Arduino_linear_sensors {
 		log.Printf("sent instruction for: %s", s)
-		validated := 0 
+		validated := 0
 		reply = comm2_arduino(s)
 		if reply != "null" {
 			output, err := strconv.Atoi(reply)
@@ -83,7 +83,7 @@ func read_arduino() {
 				validated = last_linear(s)
 				log.Printf("failed read, using cached value\n")
 			} else {
-				ref_value := reference(s)
+				ref_value := reference(s,output)
 				lower := float32(ref_value) * conf.Lower_limit
 				upper := float32(ref_value) * conf.Upper_limit
 				if float32(output) >= lower && float32(output) <= upper {
@@ -109,7 +109,7 @@ func read_arduino() {
 	}
 	for _, s := range conf.Arduino_exp_sensors {
 		log.Printf("sent instruction for: %s", s)
-		validated := 0 
+		validated := 0
 		reply = comm2_arduino(s)
 		if reply != "null" {
 			output, err := strconv.Atoi(reply)
@@ -119,8 +119,16 @@ func read_arduino() {
 				validated = last_exp(s)
 				log.Printf("failed read, using cached value\n")
 			} else {
-					validated = output
-					add_exp(s,output)
+				validated = output
+				add_exp(s,output)
+				ref_value := last_exp(s)
+				lower := float32(ref_value) * conf.Lower_limit
+				upper := float32(ref_value) * conf.Upper_limit
+				if float32(output) >= lower && float32(output) <= upper {
+					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
+				} else {
+					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper, arduino_prev_linear_stat[s])
+				}
 			}
 		} else {
 			log.Printf("failed read, using cached value\n")
@@ -133,7 +141,6 @@ func read_arduino() {
 		mutex.Unlock()
 		time.Sleep(time.Second * 2)
 	}
-	
 	check := comm2_arduino("S")
 	mutex.Lock()
 	arduino_linear_stat["check_error"] = 0
@@ -198,6 +205,16 @@ func main() {
 		arduino_prev_linear_stat[k] = []int{0}
 	}
 
+	n = len(conf.Arduino_exp_sensors)
+	arduino_exp_stat = make(map[string]int, n)
+	for k, _ := range arduino_exp_stat {
+		arduino_exp_stat[k] = 0
+	}
+
+	arduino_prev_exp_stat = make(map[string][]int, n)
+	for _, k := range conf.Arduino_exp_sensors {
+		arduino_prev_exp_stat[k] = []int{0}
+	}
 	log.Printf("Metrics will be exposed on %s\n", conf.Listen)
 	if conf.Verbose {
 		log.Printf("Verbose logging is enabled")
