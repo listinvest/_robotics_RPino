@@ -27,7 +27,7 @@ func add_linear(sensor string, value int) {
 	lenght := len(arduino_prev_linear_stat[sensor])
 	arduino_prev_linear_stat[sensor] = append(arduino_prev_linear_stat[sensor],value)
 	//removing oldest value
-	if lenght >= conf.Depth {
+	if lenght >= conf.Analysis.Depth {
 		arduino_prev_linear_stat[sensor] = arduino_prev_linear_stat[sensor][1:]
 	}
 
@@ -37,7 +37,7 @@ func add_exp(sensor string, value int) {
 	lenght := len(arduino_prev_exp_stat[sensor])
 	arduino_prev_exp_stat[sensor] = append(arduino_prev_exp_stat[sensor],value)
 	//removing oldest value
-	if lenght >= conf.Depth {
+	if lenght >= conf.Analysis.Depth {
 		arduino_prev_exp_stat[sensor] = arduino_prev_exp_stat[sensor][1:]
 	}
 
@@ -51,7 +51,7 @@ func reference(sensor string, value int) (ref int) {
 		return ref
 	}
 	sort.Ints(arduino_prev_linear_stat[sensor])
-	ref = int(lenght * conf.Percentile)
+	ref = int(lenght * conf.Analysis.Percentile)
 	if verbose { fmt.Printf("index %d, value: %d\n",ref,arduino_prev_linear_stat[sensor][ref]) }
 	ref = arduino_prev_linear_stat[sensor][ref]
 	return ref
