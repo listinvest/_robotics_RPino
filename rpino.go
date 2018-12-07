@@ -92,8 +92,8 @@ func read_arduino() {
 					add_linear(s,output)
 
 				} else {
-					log.Printf("value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper, arduino_prev_linear_stat[s])
 					validated = last_linear(s)
+					log.Printf("value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper,validated)
 				}
 			}
 		} else {
@@ -120,15 +120,15 @@ func read_arduino() {
 				log.Printf("failed read, using cached value\n")
 			} else {
 				validated = output
-				add_exp(s,output)
 				ref_value := last_exp(s)
-				lower := float32(ref_value) * conf.Lower_limit
-				upper := float32(ref_value) * conf.Upper_limit
+				lower := float32(ref_value) * (conf.Lower_limit - 0.1)
+				upper := float32(ref_value) * (conf.Upper_limit + 0.1)
 				if float32(output) >= lower && float32(output) <= upper {
 					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
 				} else {
-					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper, arduino_prev_linear_stat[s])
+					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper, ref_value)
 				}
+				add_exp(s,output)
 			}
 		} else {
 			log.Printf("failed read, using cached value\n")
