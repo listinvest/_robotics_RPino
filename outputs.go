@@ -27,8 +27,8 @@ func init() {
 
 func speak() {
 	longv := ""
-	sermon := "espeak -g 5 \"" + conf.Speech + ".\n"
-	for _, v := range conf.Relevant_sensors {
+	sermon := "espeak -g 5 \"" + conf.Geri.Speech + ".\n"
+	for _, v := range conf.Geri.Sensors {
 		val := strconv.Itoa(arduino_linear_stat[v])
 		if v == "H" { longv = "humidity"}
 		if v == "T" { longv = "temperature"}
@@ -61,7 +61,7 @@ func human_presence() {
 
 func alarm_mgr() {
 	// Open and map memory to access gpio, check for errors
-	pin := rpio.Pin(conf.Alarm_pin)
+	pin := rpio.Pin(conf.Outputs["alarm"].PIN)
         if err := rpio.Open(); err != nil {
                 log.Fatal(err)
                 os.Exit(1)
@@ -102,7 +102,7 @@ func command_socket(socket string) (reply string) {
 
 
 func send_gpio1(gpio1 <-chan string) {
-	pin := rpio.Pin(conf.Socket1)
+	pin := rpio.Pin(conf.Outputs["socket1"].PIN)
 	pin.Output()
 	for {
 		status := <-gpio1
@@ -117,7 +117,7 @@ func send_gpio1(gpio1 <-chan string) {
 }
 
 func send_gpio2(gpio2 <-chan string) {
-	pin := rpio.Pin(conf.Socket2)
+	pin := rpio.Pin(conf.Outputs["socket2"].PIN)
 	pin.Output()
 	for {
 		status := <-gpio2
