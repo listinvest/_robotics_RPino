@@ -11,6 +11,7 @@ import (
 
 func json_stats(w http.ResponseWriter, r *http.Request) {
 	all_data := make(map[string]int)
+	lock.Lock()
 	for k, v := range arduino_linear_stat {
 		all_data[k] = v
 	}
@@ -20,6 +21,7 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 	for k, v := range rpi_stat {
 		all_data[k] = v
 	}
+	lock.Unlock()
 	//add extra diagnostic fields
 	t := time.Now()
 	elapsed := t.Sub(start_time)

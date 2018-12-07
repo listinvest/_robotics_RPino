@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"sync"
 	"strconv"
 	"time"
 	"github.com/stianeikeland/go-rpio"
@@ -16,7 +15,6 @@ var (
 	gpio2        chan (string)
 )
 
-var lock = &sync.Mutex{}
 
 func init() {
 	gpio1 = make(chan string)

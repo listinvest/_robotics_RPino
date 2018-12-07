@@ -48,7 +48,7 @@ var (
 	conf              *config
 )
 
-var mutex = &sync.Mutex{}
+var lock = &sync.Mutex{}
 
 func init() {
 	prometheus.MustRegister(SensorStat)
@@ -102,9 +102,9 @@ func read_arduino() {
 			failed_read++
 		}
 		reply = ""
-		mutex.Lock()
+		lock.Lock()
 		arduino_linear_stat[s] = validated
-		mutex.Unlock()
+		lock.Unlock()
 		time.Sleep(time.Second * 2)
 	}
 	for _, s := range conf.Arduino_exp_sensors {
@@ -136,36 +136,36 @@ func read_arduino() {
 			failed_read++
 		}
 		reply = ""
-		mutex.Lock()
+		lock.Lock()
 		arduino_exp_stat[s] = validated
-		mutex.Unlock()
+		lock.Unlock()
 		time.Sleep(time.Second * 2)
 	}
 	check := comm2_arduino("S")
-	mutex.Lock()
+	lock.Lock()
 	arduino_linear_stat["check_error"] = 0
 	if strings.Index(check, "ok") == -1 { // check if the reply is what we asked
 		log.Printf("Periodic check failed (%q)!\n", check)
 		arduino_linear_stat["check_error"] = 1
 	}
-	mutex.Unlock()
+	lock.Unlock()
 }
 
 func get_rpi_stat() {
 	if conf.Verbose {
 		log.Println("RPi stats")
 	}
-	mutex.Lock()
+	lock.Lock()
 	rpi_stat["wifi-signal"] = get_wireless_signal()
 	d, h := get_uptime()
 	rpi_stat["rpi_uptime_days"] = d
 	rpi_stat["rpi_uptime_hours"] = h
 	rpi_stat["cput"] = get_Cpu_temp()
-	mutex.Unlock()
+	lock.Unlock()
 }
 
 func prometheus_update() {
-	mutex.Lock()
+	lock.Lock()
 	for k, v := range arduino_linear_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
 	}
@@ -179,7 +179,7 @@ func prometheus_update() {
 	good_read = 0
 	SerialStat.WithLabelValues("Bad").Add(float64(failed_read))
 	failed_read = 0
-	mutex.Unlock()
+	lock.Unlock()
 }
 
 func main() {
@@ -235,6 +235,7 @@ func main() {
 	go send_gpio2(gpio2)
 	go human_presence()
 	go alarm_mgr()
+	go start_inputs()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)

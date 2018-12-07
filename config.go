@@ -22,7 +22,13 @@ type config struct {
 	Verbose           bool     `toml:"verbose"`
 	Zero_unreadable   bool     `toml:"zero_unreadable"`
 	Speech            string   `toml:"speech"`
+	Inputs		  map[string]sensor
 }
+
+type sensor struct {
+		PIN int
+	}
+
 
 func loadConfig(path string) (*config) {
 	conf := &config{}
