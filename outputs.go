@@ -13,12 +13,14 @@ import (
 var (
 	gpio1        chan (string)
 	gpio2        chan (string)
+	human	     chan  (bool)
 )
 
 
 func init() {
 	gpio1 = make(chan string)
 	gpio2 = make(chan string)
+	human = make(chan bool)
 
 	if err := rpio.Open(); err != nil {
 		log.Fatal(err)
@@ -44,17 +46,11 @@ func speak() {
 }
 
 func human_presence() {
-	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
-	for t := range ticker.C {
-		os.Stderr.WriteString(t.String())
-		lock.Lock()
-		presence := arduino_linear_stat["U"]
-		lock.Unlock()
-		if presence == 1 {
+	for {
+		presence := <-human
+		if presence {
 			if conf.Verbose { log.Printf("Human detected\n")}
 			speak()
-		} else {
-			if conf.Verbose { log.Printf("Human NOT detected\n")}
 		}
 	}
 }

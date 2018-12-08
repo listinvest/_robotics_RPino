@@ -14,7 +14,7 @@ type config struct {
 	Verbose           bool     `toml:"verbose"`
 	Inputs		  map[string]sensor
 	Outputs		  map[string]sensor
-	Geri		  geri	`toml:"geri"`
+	Geri		  geriatric `toml:"geri"`
 	Analysis	  analysis `toml:"data_analysis"`
 }
 
@@ -22,7 +22,7 @@ type sensor struct {
 	PIN int
 }
 
-type geri struct {
+type geriatric struct {
 	Sensors	 []string
 	Speech	 string	`toml:"speech"`
 }

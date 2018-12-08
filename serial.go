@@ -23,6 +23,9 @@ func comm2_arduino(sensor string) (output string){
 	if conf.Verbose { log.Printf("Asked: %s", cmd) }
 	buf := make([]byte, 8)
 	nbytes, failed := s.Read(buf)
+	if nbytes < 2 {
+		_,  failed = s.Read(buf)
+	}
 	if failed != nil {
 		log.Printf("error: %s\n",failed)
 		failed_read++

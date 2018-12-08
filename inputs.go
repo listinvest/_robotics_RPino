@@ -28,13 +28,16 @@ func gpio_watch(sensor string,Spin int) {
 	pin.Input()
         defer rpio.Close()
 	//set a x seconds ticker
-	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
+	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second/2)
 
 	for _ = range ticker.C {
 		res := pin.Read()
-	        //log.Printf("%s",res)
+		//log.Printf("detected: %d",res)
 		lock.Lock()
 		arduino_linear_stat[sensor]=int(res)
 		lock.Unlock()
+		if res == 1 && sensor == "human" {
+			human <- true
+		}
 	}
 }
