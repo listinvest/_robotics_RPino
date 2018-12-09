@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 	"github.com/stianeikeland/go-rpio"
@@ -12,9 +11,9 @@ import (
 //var lock = &sync.Mutex{}
 
 func start_inputs() {
-	if len(conf.Inputs)==0 { fmt.Println("No GPIO to monitor") }
+	if len(conf.Inputs)==0 { log.Printf("No GPIO to monitor") }
 	for sensor, detail := range conf.Inputs {
-		fmt.Printf("Starting watched for sensor: %s on pin %d\n", sensor, detail.PIN)
+		log.Printf("Starting to monitor sensor: %s on pin %d", sensor, detail.PIN)
 		go gpio_watch(sensor,detail.PIN)
 	}
 }

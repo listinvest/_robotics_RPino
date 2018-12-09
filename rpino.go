@@ -228,9 +228,15 @@ func main() {
 	for _, k := range conf.Arduino_exp_sensors {
 		arduino_prev_exp_stat[k] = []int{0}
 	}
-	log.Printf("Metrics will be exposed on %s\n", conf.Listen)
+	log.Printf("Prometheus metrics will be exposed on %s\n", conf.Listen)
 	if conf.Verbose {
 		log.Printf("Verbose logging is enabled")
+		if conf.Alarms.Siren_enabled {
+			log.Printf("Siren is configured on pin %d ",conf.Outputs["alarm"].PIN)
+		}
+		if conf.Alarms.Email_enabled {
+			log.Printf("Email notification is for  %s ",conf.Alarms.Mailbox)
+		}
 	}
 	flush_serial()
 	//set a x seconds ticker

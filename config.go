@@ -15,16 +15,26 @@ type config struct {
 	Outputs		  map[string]sensor
 	Alarms		  alarms `toml:"alarms"`
 	Analysis	  analysis `toml:"data_analysis"`
+	Speech		  speech `toml:"speech"`
 }
 
 type sensor struct {
 	PIN int
 }
 
+type speech struct {
+	Sensors	 []string
+	Message	 string	`toml:"speech"`
+}
+
 type alarms struct {
-	Speech_sensors	 []string
-	Speech_message	 string	`toml:"speech"`
-	Critical_temp	  int	   `toml:"critical_temp"`
+	Critical_temp  int `toml:"critical_temp"`
+	Email_enabled bool
+	Siren_enabled bool
+	Smtp string `toml:"smtp"`
+	Mailbox string `toml:"mailbox"`
+	Auth_user string `toml:"auth_user"`
+	Auth_pwd string `toml:"auth_pwd"`
 }
 
 type analysis struct {

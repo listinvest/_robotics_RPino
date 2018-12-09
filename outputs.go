@@ -1,7 +1,12 @@
 package main
 
 import (
+	"crypto/tls"
+	"fmt"
 	"log"
+	"net"
+	"net/mail"
+	"net/smtp"
 	"os"
 	"os/exec"
 	"strconv"
@@ -29,8 +34,8 @@ func init() {
 
 func speak() {
 	longv := ""
-	sermon := "espeak -g 5 \"" + conf.Alarms.Speech_message + ".\n"
-	for _, v := range conf.Alarms.Speech_sensors {
+	sermon := "espeak -g 5 \"" + conf.Speech.Message + ".\n"
+	for _, v := range conf.Speech.Sensors {
 		val := strconv.Itoa(arduino_linear_stat[v])
 		if v == "H" { longv = "humidity"}
 		if v == "T" { longv = "temperature"}
@@ -56,16 +61,19 @@ func human_presence() {
 }
 
 func alarm_mgr() {
-	// Open and map memory to access gpio, check for errors
-	pin := rpio.Pin(conf.Outputs["alarm"].PIN)
-        if err := rpio.Open(); err != nil {
-                log.Fatal(err)
-                os.Exit(1)
-        }
-	pin.Output()
-	pin.Low()
-        defer rpio.Close()
-	time.Sleep(time.Minute) //wait for PIR initialization
+	var pin  rpio.Pin
+	if conf.Alarms.Siren_enabled {
+		// Open and map memory to access gpio, check for errors
+		pin = rpio.Pin(conf.Outputs["alarm"].PIN)
+		if err := rpio.Open(); err != nil {
+		        log.Fatal(err)
+			os.Exit(1)
+	        }
+		pin.Output()
+		pin.Low()
+		defer rpio.Close()
+	}
+	time.Sleep(time.Minute)
 	//set a x seconds ticker
 	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
 
@@ -75,9 +83,15 @@ func alarm_mgr() {
 		lock.Unlock()
 		if actual_temp < conf.Alarms.Critical_temp {
 			log.Printf("Alarm triggered!!\n")
-			pin.High()
-			time.Sleep(time.Second*30)
-			pin.Low()
+			if conf.Alarms.Email_enabled {
+				send_email(strconv.Itoa(actual_temp))
+			}
+			if conf.Alarms.Siren_enabled {
+				pin.High()
+				time.Sleep(time.Second*30)
+				pin.Low()
+				time.Sleep(time.Second*30)
+			}
 		}
 	}
 }
@@ -127,3 +141,63 @@ func send_gpio2(gpio2 <-chan string) {
 	}
 }
 
+func send_email(temp string) {
+
+	from := mail.Address{"", conf.Alarms.Mailbox}
+	to := mail.Address{"", conf.Alarms.Mailbox}
+	subj := "Greenhouse Temperature Alarm"
+	body := "Detected Low temperature (" + temp + "C )\n\n"
+	// Setup headers
+	headers := make(map[string]string)
+	headers["From"] = from.String()
+	headers["To"] = to.String()
+	headers["Subject"] = subj
+	headers["X-Priority"] = "1"
+	// Setup message
+	message := ""
+	for k, v := range headers {
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
+	}
+	message += "\r\n" + body
+	// Connect to the SMTP Server
+	servername := conf.Alarms.Smtp
+	host, _, _ := net.SplitHostPort(servername)
+	auth := smtp.PlainAuth("", conf.Alarms.Auth_user, conf.Alarms.Auth_pwd, host)
+	// TLS config
+	tlsconfig := &tls.Config{
+		InsecureSkipVerify: true,
+		ServerName:         host,
+	}
+	c, err := smtp.Dial(servername)
+	if err != nil {
+		log.Printf("%s", err)
+	}
+	c.StartTLS(tlsconfig)
+	// Auth
+	if err = c.Auth(auth); err != nil {
+		log.Printf("%s", err)
+		c.Quit()
+	} else {
+		// To && From
+		if err = c.Mail(from.Address); err != nil {
+			log.Printf("%s", err)
+		}
+		if err = c.Rcpt(to.Address); err != nil {
+			log.Printf("%s", err)
+		}
+		// Data
+		w, err := c.Data()
+		if err != nil {
+			log.Printf("%s", err)
+		}
+		_, err = w.Write([]byte(message))
+		if err != nil {
+			log.Printf("%s", err)
+		}
+		err = w.Close()
+		if err != nil {
+			log.Printf("%s", err)
+		}
+		c.Quit()
+	}
+}
