@@ -28,7 +28,7 @@ func comm2_arduino(sensor string) (output string){
 	}
 	if failed != nil {
 		log.Printf("error: %s\n",failed)
-		failed_read++
+		serial_stat["failed_read"] = serial_stat["failed_read"] + 1
 		output = "null"
 	} else {
 		reply := string(buf)
@@ -39,10 +39,10 @@ func comm2_arduino(sensor string) (output string){
 			}
 			reply = strings.Replace(reply,sensor+": ","",1 )
 			output = reg.ReplaceAllString(reply, "")
-			good_read++
+			serial_stat["good_read"] =  serial_stat["good_read"] + 1
 		} else {
 			log.Printf("Unexpected reply\n")
-			failed_read++
+			serial_stat["failed_read"] = serial_stat["failed_read"] + 1
 			output = "null"
 		}
 	}

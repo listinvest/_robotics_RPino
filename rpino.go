@@ -39,13 +39,13 @@ var (
 	arduino_prev_exp_stat map[string][]int
 	arduino_linear_stat      map[string]int
 	arduino_exp_stat      map[string]int
+	serial_stat	  map[string]int
 	rpi_stat          map[string]int
 	arduino_in        chan (string) // questions to  Arduino
 	arduino_out       chan (string) // replies from Arduino
 	start_time        time.Time
-	good_read         int = 1
-	failed_read       int = 1
 	conf              *config
+	first_run	  bool = true
 )
 
 var lock = &sync.Mutex{}
@@ -63,7 +63,11 @@ func init() {
 		log.Fatal(err)
 	}
 	rpi_stat = make(map[string]int)
-
+	serial_stat = make(map[string]int)
+	serial_stat["good_read"] = 1
+	serial_stat["failed_read"] = 1
+	serial_stat["failed_atoi"] = 1
+	serial_stat["failed_interval"] = 1
 }
 
 func read_arduino() {
@@ -79,7 +83,7 @@ func read_arduino() {
 			output, err := strconv.Atoi(reply)
 			if err != nil {
 				log.Printf("Failed conversion: %s\n", err)
-				failed_read++
+				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
 				validated = last_linear(s)
 				log.Printf("failed read, using cached value\n")
 			} else {
@@ -94,6 +98,7 @@ func read_arduino() {
 				} else {
 					validated = last_linear(s)
 					log.Printf("value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper,validated)
+					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 				}
 			}
 		} else {
@@ -114,22 +119,28 @@ func read_arduino() {
 			output, err := strconv.Atoi(reply)
 			if err != nil {
 				log.Printf("Failed conversion: %s\n", err)
-				failed_read++
+				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
 				validated = last_exp(s)
 				log.Printf("failed read, using cached value\n")
 			} else {
 				ref_value := last_exp(s)
 				lower := float32(ref_value) * (conf.Analysis.Lower_limit - 0.1)
 				upper := float32(ref_value) * (conf.Analysis.Upper_limit + 0.1)
-				if float32(output) >= lower && float32(output) <= upper {
+				if float32(output) >= lower && float32(output) <= upper{
 					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
 					validated = output
+					add_exp(s,validated)
 				} else {
 					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f )\n", s, output, lower, upper)
-					//validated = ref_value // will add the ref value
-					validated = output //will add last values
+					validated = ref_value // will add the ref value, which is the previuos
+					//validated = output //will add last values
+					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 				}
-				add_exp(s,validated)
+				// first run, we add anyway the value
+				if first_run {
+					add_exp(s,output)
+					serial_stat["failed_interval"] = 0
+				}
 			}
 		} else {
 			log.Printf("failed read, using cached value\n")
@@ -141,6 +152,7 @@ func read_arduino() {
 		lock.Unlock()
 		time.Sleep(time.Second * 2)
 	}
+	first_run = false
 	check := comm2_arduino("S")
 	lock.Lock()
 	arduino_linear_stat["check_error"] = 0
@@ -175,10 +187,11 @@ func prometheus_update() {
 	for k, v := range rpi_stat {
 		RPIStat.WithLabelValues(k).Set(float64(v))
 	}
-	SerialStat.WithLabelValues("Good").Add(float64(good_read))
-	good_read = 0
-	SerialStat.WithLabelValues("Bad").Add(float64(failed_read))
-	failed_read = 0
+
+	for k, v := range serial_stat {
+		SerialStat.WithLabelValues(k).Add(float64(v))
+		serial_stat[k] = 0
+	}
 	lock.Unlock()
 }
 

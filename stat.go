@@ -6,7 +6,7 @@ import (
 )
 
 func nsamples(sensor string)(num int){
-	num = len(arduino_prev_linear_stat[sensor])
+	num = len(arduino_prev_exp_stat[sensor])
 	return num
 }
 

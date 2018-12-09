@@ -29,8 +29,8 @@ func init() {
 
 func speak() {
 	longv := ""
-	sermon := "espeak -g 5 \"" + conf.Geri.Speech + ".\n"
-	for _, v := range conf.Geri.Sensors {
+	sermon := "espeak -g 5 \"" + conf.Alarms.Speech_message + ".\n"
+	for _, v := range conf.Alarms.Speech_sensors {
 		val := strconv.Itoa(arduino_linear_stat[v])
 		if v == "H" { longv = "humidity"}
 		if v == "T" { longv = "temperature"}
@@ -73,7 +73,7 @@ func alarm_mgr() {
 		lock.Lock()
 		actual_temp := arduino_linear_stat["T"]
 		lock.Unlock()
-		if actual_temp < conf.Critical_temp {
+		if actual_temp < conf.Alarms.Critical_temp {
 			log.Printf("Alarm triggered!!\n")
 			pin.High()
 			time.Sleep(time.Second*30)
