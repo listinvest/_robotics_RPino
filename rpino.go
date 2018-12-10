@@ -132,8 +132,8 @@ func read_arduino() {
 					add_exp(s,validated)
 				} else {
 					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f )\n", s, output, lower, upper)
-					validated = ref_value // will add the ref value, which is the previuos
-					//validated = output //will add last values
+					//validated = ref_value // will add the ref value, which is the previuos
+					validated = output //will add last values
 					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 				}
 				// first run, we add anyway the value
@@ -148,7 +148,10 @@ func read_arduino() {
 		}
 		reply = ""
 		lock.Lock()
-		arduino_exp_stat[s] = validated
+		if validated > 0 {
+			inverted := int(1/float32(validated)*10000)
+			arduino_exp_stat[s] = inverted
+		}
 		lock.Unlock()
 		time.Sleep(time.Second * 2)
 	}

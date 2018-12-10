@@ -57,4 +57,14 @@ func reference(sensor string, value int) (ref int) {
 	return ref
 }
 
-
+func average(sensor string) {
+	lenght := len(arduino_prev_exp_stat[sensor])
+	total := 0
+	for _,v := range arduino_prev_exp_stat[sensor]{
+		if v != 0 {
+			total = total + v
+		}
+	}
+	avg := int(total/lenght)
+	fmt.Printf("Avg: %d\n",avg)
+}
