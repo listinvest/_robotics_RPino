@@ -57,6 +57,21 @@ func reference(sensor string, value int) (ref int) {
 	return ref
 }
 
+func median(sensor string, value int) (ref int) {
+	lenght := float32(len(arduino_prev_exp_stat[sensor]))
+	if lenght == 1 {
+		if conf.Verbose { fmt.Printf("history is emtpy, returning %d\n",value)}
+		ref = value
+		return ref
+	}
+	sort.Ints(arduino_prev_exp_stat[sensor])
+	ref = int(lenght * 0.6)
+	if verbose { fmt.Printf("median: %d\n",arduino_prev_linear_stat[sensor][ref]) }
+	ref = arduino_prev_exp_stat[sensor][ref]
+	return ref
+}
+
+
 func average(sensor string) {
 	lenght := len(arduino_prev_exp_stat[sensor])
 	total := 0

@@ -123,26 +123,25 @@ func read_arduino() {
 				validated = last_exp(s)
 				log.Printf("failed read, using cached value\n")
 			} else {
-				ref_value := last_exp(s)
+				ref_value := median(s, output)
 				lower := float32(ref_value) * (conf.Analysis.Lower_limit - 0.1)
 				upper := float32(ref_value) * (conf.Analysis.Upper_limit + 0.1)
-				if float32(output) >= lower && float32(output) <= upper{
+				if output < 30 {
+					log.Printf("EXP: small value, saved \n")
+					validated = output
+				} else if float32(output) >= lower && float32(output) <= upper{
 					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
 					validated = output
-					add_exp(s,validated)
 				} else {
 					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f )\n", s, output, lower, upper)
-					//validated = ref_value // will add the ref value, which is the previuos
-					validated = output //will add last values
+					validated = last_exp(s) //will use prev value
 					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 				}
-				// first run, we add anyway the value
-				if first_run {
-					add_exp(s,output)
-					serial_stat["failed_interval"] = 0
-				}
+				// add every value we recieve to the history
+				add_exp(s,validated)
 			}
 		} else {
+			//need to do boundary check here??
 			log.Printf("failed read, using cached value\n")
 			validated = last_exp(s)
 		}
