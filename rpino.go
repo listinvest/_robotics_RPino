@@ -123,13 +123,11 @@ func read_arduino() {
 				validated = last_exp(s)
 				log.Printf("failed read, using cached value\n")
 			} else {
-				ref_value := median(s, output)
-				lower := float32(ref_value) * (conf.Analysis.Lower_limit - 0.1)
-				upper := float32(ref_value) * (conf.Analysis.Upper_limit + 0.1)
-				if output < 30 {
-					log.Printf("EXP: small value, saved \n")
-					validated = output
-				} else if float32(output) >= lower && float32(output) <= upper{
+				//ref_value := median(s, output)
+				ref_value := mma(s, output,2,1)
+				lower := float32(ref_value) * (conf.Analysis.Lower_limit)
+				upper := float32(ref_value) * (conf.Analysis.Upper_limit)
+				if float32(output) >= lower && float32(output) <= upper{
 					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
 					validated = output
 				} else {
