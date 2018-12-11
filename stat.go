@@ -74,7 +74,7 @@ func median(sensor string, value int) (ref int) {
 // multiplied moving average
 func mma(sensor string, value int, ff int, sf int) (avg float32) {
         lenght := len(arduino_prev_exp_stat[sensor])
-	if lenght == 1 {
+	if lenght <= 1 {
 		if conf.Verbose { fmt.Printf("history is emtpy, returning %d\n",value)}
 		avg = float32(value)
 		return avg
@@ -83,6 +83,7 @@ func mma(sensor string, value int, ff int, sf int) (avg float32) {
         total := 0
 
         for i,v := range arduino_prev_exp_stat[sensor]{
+		if v == 0 { continue }
                 if i == lenght - 2{
                         total = total + v*sf
                         items = items + sf
@@ -95,7 +96,6 @@ func mma(sensor string, value int, ff int, sf int) (avg float32) {
                 items = items + 1
         }
         avg = float32(total)/float32(items)
-        fmt.Printf("MMA: %f\n",avg)
 	return avg
 }
 
