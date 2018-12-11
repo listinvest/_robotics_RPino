@@ -184,6 +184,9 @@ func prometheus_update() {
 	for k, v := range arduino_exp_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
 	}
+	dutyc := dutycycle("T")
+	SensorStat.WithLabelValues("dutycycle_T").Set(float64(dutyc))
+
 	for k, v := range rpi_stat {
 		RPIStat.WithLabelValues(k).Set(float64(v))
 	}

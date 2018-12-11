@@ -98,3 +98,14 @@ func mma(sensor string, value int, ff int, sf int) (avg float32) {
         fmt.Printf("MMA: %f\n",avg)
 	return avg
 }
+
+func dutycycle(sensor string) (up int) {
+	num := arduino_linear_stat[sensor]
+	prev := last_linear(sensor)
+        if num >= prev {
+                up = 1
+        } else if num == prev {
+		up = 0
+	}
+	return up
+}
