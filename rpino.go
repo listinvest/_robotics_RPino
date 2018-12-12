@@ -137,7 +137,7 @@ func read_arduino() {
 					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
 					validated = output
 				} else {
-					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f )\n", s, output, lower, upper)
+					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f ) centered on %f\n", s, output, lower, upper, ref_value)
 					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 					if use_cached {
 						validated = last_exp(s) //will use prev value
