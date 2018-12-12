@@ -39,6 +39,7 @@ var (
 	arduino_prev_exp_stat map[string][]int
 	arduino_linear_stat      map[string]int
 	arduino_exp_stat      map[string]int
+	arduino_cache_stat      map[string]int
 	serial_stat	  map[string]int
 	rpi_stat          map[string]int
 	arduino_in        chan (string) // questions to  Arduino
@@ -114,6 +115,11 @@ func read_arduino() {
 	for _, s := range conf.Arduino_exp_sensors {
 		log.Printf("sent instruction for: %s", s)
 		validated := 0
+		use_cached := true
+		if arduino_cache_stat[s] > conf.Analysis.Cache_limit { 
+			// if we used the cached value X times, we will prohibit to use again, this will allow MMA to catch up
+			use_cached = false 
+		}
 		reply = comm2_arduino(s)
 		if reply != "null" {
 			output, err := strconv.Atoi(reply)
@@ -132,14 +138,23 @@ func read_arduino() {
 					validated = output
 				} else {
 					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f )\n", s, output, lower, upper)
-					validated = last_exp(s) //will use prev value
 					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
+					if use_cached {
+						validated = last_exp(s) //will use prev value
+						if validated == output { //if we already used, we start counting
+							arduino_cache_stat[s] = arduino_cache_stat[s] + 1
+						} else {
+							// we didn't used last time, we can reset the counter
+							arduino_cache_stat[s] = 0
+						}
+					} else {
+						validated = output
+					}
 				}
 				// add every value we recieve to the history
 				add_exp(s,validated)
 			}
 		} else {
-			//need to do boundary check here??
 			log.Printf("failed read, using cached value\n")
 			validated = last_exp(s)
 		}
@@ -227,10 +242,17 @@ func main() {
 		arduino_exp_stat[k] = 0
 	}
 
+	arduino_cache_stat = make(map[string]int, n)
+	for k, _ := range arduino_exp_stat {
+		arduino_cache_stat[k] = 0
+	}
+
 	arduino_prev_exp_stat = make(map[string][]int, n)
 	for _, k := range conf.Arduino_exp_sensors {
 		arduino_prev_exp_stat[k] = []int{0}
 	}
+
+
 	log.Printf("Prometheus metrics will be exposed on %s\n", conf.Listen)
 	if conf.Verbose {
 		log.Printf("Verbose logging is enabled")

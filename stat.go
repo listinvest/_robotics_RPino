@@ -5,6 +5,10 @@ import (
 	"sort"
 )
 
+var (
+	raising bool
+)
+
 func nsamples(sensor string)(num int){
 	num = len(arduino_prev_exp_stat[sensor])
 	return num
@@ -100,12 +104,18 @@ func mma(sensor string, value int, ff int, sf int) (avg float32) {
 }
 
 func dutycycle(sensor string) (up int) {
+	up = 0
 	num := arduino_linear_stat[sensor]
 	prev := last_linear(sensor)
-        if num >= prev {
+        if num > prev {
                 up = 1
+		raising = true
         } else if num == prev {
-		up = 0
+		if raising {
+                       up = 1
+                }
+	} else {
+		raising = false
 	}
 	return up
 }
