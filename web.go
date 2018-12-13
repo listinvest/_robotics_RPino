@@ -57,7 +57,10 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 		comm2_arduino("X")
 
 	case "/api/alarm_check":
-		speak()
+		alarm_mgr()
+
+	case "/api/history_reset":
+		history_setup()
 
 	default:
 		log.Printf("Unknown Api (%s)!\n", api_type)

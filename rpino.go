@@ -116,9 +116,9 @@ func read_arduino() {
 		log.Printf("sent instruction for: %s", s)
 		validated := 0
 		use_cached := true
-		if arduino_cache_stat[s] > conf.Analysis.Cache_limit { 
+		if arduino_cache_stat[s] > conf.Analysis.Cache_limit {
 			// if we used the cached value X times, we will prohibit to use again, this will allow MMA to catch up
-			use_cached = false 
+			use_cached = false
 		}
 		reply = comm2_arduino(s)
 		if reply != "null" {
@@ -227,31 +227,12 @@ func main() {
 	// initialize maps
 	n := len(conf.Arduino_linear_sensors)
 	arduino_linear_stat = make(map[string]int, n)
-	for k, _ := range arduino_linear_stat {
-		arduino_linear_stat[k] = 0
-	}
-
 	arduino_prev_linear_stat = make(map[string][]int, n)
-	for _, k := range conf.Arduino_linear_sensors {
-		arduino_prev_linear_stat[k] = []int{0}
-	}
-
 	n = len(conf.Arduino_exp_sensors)
 	arduino_exp_stat = make(map[string]int, n)
-	for k, _ := range arduino_exp_stat {
-		arduino_exp_stat[k] = 0
-	}
-
 	arduino_cache_stat = make(map[string]int, n)
-	for k, _ := range arduino_exp_stat {
-		arduino_cache_stat[k] = 0
-	}
-
 	arduino_prev_exp_stat = make(map[string][]int, n)
-	for _, k := range conf.Arduino_exp_sensors {
-		arduino_prev_exp_stat[k] = []int{0}
-	}
-
+	history_setup()
 
 	log.Printf("Prometheus metrics will be exposed on %s\n", conf.Listen)
 	if conf.Verbose {

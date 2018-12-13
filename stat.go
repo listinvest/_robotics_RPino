@@ -61,20 +61,6 @@ func reference(sensor string, value int) (ref int) {
 	return ref
 }
 
-func median(sensor string, value int) (ref int) {
-	lenght := float32(len(arduino_prev_exp_stat[sensor]))
-	if lenght == 1 {
-		if conf.Verbose { fmt.Printf("history is emtpy, returning %d\n",value)}
-		ref = value
-		return ref
-	}
-	sort.Ints(arduino_prev_exp_stat[sensor])
-	ref = int(lenght * 0.6)
-	if verbose { fmt.Printf("median: %d\n",arduino_prev_linear_stat[sensor][ref]) }
-	ref = arduino_prev_exp_stat[sensor][ref]
-	return ref
-}
-
 // multiplied moving average
 func mma(sensor string, value int, ff int, sf int) (avg float32) {
         lenght := len(arduino_prev_exp_stat[sensor])
@@ -106,7 +92,9 @@ func mma(sensor string, value int, ff int, sf int) (avg float32) {
 func dutycycle(sensor string) (up int) {
 	up = 0
 	num := arduino_linear_stat[sensor]
-	prev := last_linear(sensor)
+	cache_count:= len(arduino_prev_linear_stat[sensor])
+	if cache_count < 2 { return up }
+	prev := arduino_prev_linear_stat[sensor][cache_count-2]
         if num > prev {
                 up = 1
 		raising = true
@@ -117,5 +105,25 @@ func dutycycle(sensor string) (up int) {
 	} else {
 		raising = false
 	}
+	if conf.Verbose { fmt.Printf("rampup status: %d, raising: %v\n",up,raising)}
 	return up
+}
+
+func history_setup() {
+	for k, _ := range arduino_linear_stat {
+		arduino_linear_stat[k] = 0
+	}
+	for _, k := range conf.Arduino_linear_sensors {
+		arduino_prev_linear_stat[k] = []int{0}
+	}
+	for k, _ := range arduino_exp_stat {
+		arduino_exp_stat[k] = 0
+	}
+	for k, _ := range arduino_exp_stat {
+		arduino_cache_stat[k] = 0
+	}
+	for _, k := range conf.Arduino_exp_sensors {
+		arduino_prev_exp_stat[k] = []int{0}
+	}
+	if conf.Verbose { fmt.Printf("reset history successfull\n")}
 }
