@@ -92,7 +92,7 @@ func read_arduino() {
 				lower := float32(ref_value) * conf.Analysis.Lower_limit
 				upper := float32(ref_value) * conf.Analysis.Upper_limit
 				if float32(output) >= lower && float32(output) <= upper {
-					log.Printf("value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
+					log.Printf("value for %s is %d, within the safe boundaries( %f - %d - %f )\n", s, output, lower, ref_value, upper)
 					validated = output
 					add_linear(s,output)
 
@@ -130,7 +130,7 @@ func read_arduino() {
 				log.Printf("failed read, using cached value\n")
 			} else {
 				//ref_value := median(s, output)
-				ref_value := mma(s, output,2,1)
+				ref_value := mma(s, output,3,1)
 				lower := float32(ref_value) * (conf.Analysis.Lower_limit)
 				upper := float32(ref_value) * (conf.Analysis.Upper_limit)
 				if float32(output) >= lower && float32(output) <= upper{
