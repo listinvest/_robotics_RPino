@@ -98,10 +98,8 @@ func dutycycle(sensor string) (up int) {
         if num > prev {
                 up = 1
 		raising = true
-        } else if num == prev {
-		if raising {
-                       up = 1
-                }
+        } else if num == prev && raising {
+                up = 1
 	} else {
 		raising = false
 	}
