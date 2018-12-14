@@ -118,6 +118,7 @@ func read_arduino() {
 		use_cached := true
 		if arduino_cache_stat[s] > conf.Analysis.Cache_limit {
 			// if we used the cached value X times, we will prohibit to use again, this will allow MMA to catch up
+			log.Printf("used cache too much, not using this time\n")
 			use_cached = false
 		}
 		reply = comm2_arduino(s)
@@ -127,17 +128,18 @@ func read_arduino() {
 				log.Printf("Failed conversion: %s\n", err)
 				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
 				validated = last_exp(s)
+				arduino_cache_stat[s] = arduino_cache_stat[s] + 1
 				log.Printf("failed read, using cached value\n")
 			} else {
-				//ref_value := median(s, output)
-				ref_value := mma(s, output,3,1)
-				lower := float32(ref_value) * (conf.Analysis.Lower_limit)
-				upper := float32(ref_value) * (conf.Analysis.Upper_limit)
+				ref_value_median := reference(s, output)
+				ref_value_mma := mma(s, output, conf.Analysis.Mma_1st, conf.Analysis.Mma_2st)
+				lower := float32(ref_value_mma) * (conf.Analysis.Lower_limit)
+				upper := float32(ref_value_mma) * (conf.Analysis.Upper_limit)
 				if float32(output) >= lower && float32(output) <= upper{
 					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
 					validated = output
 				} else {
-					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f ) centered on %f\n", s, output, lower, upper, ref_value)
+					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f ) centered on %f  [median %d]\n", s, output, lower, upper, ref_value_mma,ref_value_median)
 					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 					if use_cached {
 						validated = last_exp(s) //will use prev value
@@ -149,6 +151,7 @@ func read_arduino() {
 						}
 					} else {
 						validated = output
+						log.Printf("Using real value\n")
 					}
 				}
 				// add every value we recieve to the history
@@ -157,6 +160,7 @@ func read_arduino() {
 		} else {
 			log.Printf("failed read, using cached value\n")
 			validated = last_exp(s)
+			arduino_cache_stat[s] = arduino_cache_stat[s] + 1
 		}
 		reply = ""
 		lock.Lock()

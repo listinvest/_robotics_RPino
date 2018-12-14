@@ -43,6 +43,8 @@ type analysis struct {
 	Percentile	  float32  `toml:"percentile"`
 	Upper_limit	  float32  `toml:"upper_limit"`
 	Lower_limit	  float32  `toml:"lower_limit"`
+	Mma_1st		  int	   `toml:"mma_1st"`
+	Mma_2st		  int	   `toml:"mma_2st"`
 }
 
 

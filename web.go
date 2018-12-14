@@ -91,8 +91,10 @@ func view_history() (reply string) {
 		for _,v := range arduino_prev_exp_stat[sensor]{
 			reply = reply  + strconv.Itoa(v) + ", "
 		}
-		reply = reply + "\n"
+		used := strconv.Itoa(arduino_cache_stat[sensor])
+		reply = reply + "; used " + used + " times\n"
 	}
+
 	return reply
 }
 
