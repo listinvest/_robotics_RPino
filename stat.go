@@ -5,9 +5,6 @@ import (
 	"sort"
 )
 
-var (
-	raising bool
-)
 
 func nsamples(sensor string)(num int){
 	num = len(arduino_prev_exp_stat[sensor])
@@ -95,6 +92,7 @@ func dutycycle(sensor string) (up int) {
 	cache_count:= len(arduino_prev_linear_stat[sensor])
 	if cache_count < 2 { return up }
 	prev := arduino_prev_linear_stat[sensor][cache_count-2]
+	if conf.Verbose { fmt.Printf("num %d > prev %d, raising: %v\n",num,prev,raising)}
         if num > prev {
                 up = 1
 		raising = true

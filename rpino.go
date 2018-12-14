@@ -35,6 +35,7 @@ var SerialStat = prometheus.NewCounterVec(prometheus.CounterOpts{
 
 var (
 	verbose           bool
+	raising           bool
 	arduino_prev_linear_stat map[string][]int
 	arduino_prev_exp_stat map[string][]int
 	arduino_linear_stat      map[string]int
@@ -95,7 +96,6 @@ func read_arduino() {
 					log.Printf("value for %s is %d, within the safe boundaries( %f - %d - %f )\n", s, output, lower, ref_value, upper)
 					validated = output
 					add_linear(s,output)
-
 				} else {
 					validated = last_linear(s)
 					log.Printf("value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper,validated)
@@ -120,6 +120,7 @@ func read_arduino() {
 			// if we used the cached value X times, we will prohibit to use again, this will allow MMA to catch up
 			log.Printf("used cache too much, not using this time\n")
 			use_cached = false
+			arduino_cache_stat[s] = 0
 		}
 		reply = comm2_arduino(s)
 		if reply != "null" {
@@ -131,7 +132,7 @@ func read_arduino() {
 				arduino_cache_stat[s] = arduino_cache_stat[s] + 1
 				log.Printf("failed read, using cached value\n")
 			} else {
-				ref_value_median := reference(s, output)
+			//	ref_value_median := reference(s, output)
 				ref_value_mma := mma(s, output, conf.Analysis.Mma_1st, conf.Analysis.Mma_2st)
 				lower := float32(ref_value_mma) * (conf.Analysis.Lower_limit)
 				upper := float32(ref_value_mma) * (conf.Analysis.Upper_limit)
@@ -139,16 +140,11 @@ func read_arduino() {
 					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
 					validated = output
 				} else {
-					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f ) centered on %f  [median %d]\n", s, output, lower, upper, ref_value_mma,ref_value_median)
+					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f - %f )\n", s, output, lower, ref_value_mma, upper)
 					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 					if use_cached {
 						validated = last_exp(s) //will use prev value
-						if validated == output { //if we already used, we start counting
-							arduino_cache_stat[s] = arduino_cache_stat[s] + 1
-						} else {
-							// we didn't used last time, we can reset the counter
-							arduino_cache_stat[s] = 0
-						}
+						arduino_cache_stat[s] = arduino_cache_stat[s] + 1
 					} else {
 						validated = output
 						log.Printf("Using real value\n")
@@ -180,6 +176,7 @@ func read_arduino() {
 		arduino_linear_stat["check_error"] = 1
 	}
 	lock.Unlock()
+	flush_serial()
 }
 
 func get_rpi_stat() {

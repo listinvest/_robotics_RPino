@@ -65,7 +65,7 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 		history_setup()
 		w.Write([]byte("ok"))
 
-	case "/api/view_history":
+	case "/api/view_data":
 		w.Write([]byte(view_history()))
 
 	case "/api/help":
@@ -80,14 +80,14 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 func view_history() (reply string) {
 	reply = ""
 	for _, sensor := range conf.Arduino_linear_sensors {
-		reply = reply + sensor + ": "
+		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_linear_stat[sensor]) + ", prev: "
 		for _,v := range arduino_prev_linear_stat[sensor]{
 			reply = reply  + strconv.Itoa(v) + ", "
 		}
 		reply = reply + "\n"
 	}
 	for _, sensor := range conf.Arduino_exp_sensors {
-		reply = reply + sensor + ": "
+		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_exp_stat[sensor]) + ", prev: "
 		for _,v := range arduino_prev_exp_stat[sensor]{
 			reply = reply  + strconv.Itoa(v) + ", "
 		}
