@@ -1,10 +1,14 @@
 package main
 
 import (
+	"crypto/tls"
+	"fmt"
 	"log"
+	"net"
+	"net/mail"
+	"net/smtp"
 	"os"
 	"os/exec"
-	"sync"
 	"strconv"
 	"time"
 	"github.com/stianeikeland/go-rpio"
@@ -14,13 +18,14 @@ import (
 var (
 	gpio1        chan (string)
 	gpio2        chan (string)
+	human	     chan  (bool)
 )
 
-var lock = &sync.Mutex{}
 
 func init() {
 	gpio1 = make(chan string)
 	gpio2 = make(chan string)
+	human = make(chan bool)
 
 	if err := rpio.Open(); err != nil {
 		log.Fatal(err)
@@ -29,9 +34,9 @@ func init() {
 
 func speak() {
 	longv := ""
-	sermon := "espeak -g 5 \"" + conf.Speech + ".\n"
-	for _, v := range conf.Relevant_sensors {
-		val := strconv.Itoa(arduino_stat[v])
+	sermon := "espeak -g 5 \"" + conf.Speech.Message + ".\n"
+	for _, v := range conf.Speech.Sensors {
+		val := strconv.Itoa(arduino_linear_stat[v])
 		if v == "H" { longv = "humidity"}
 		if v == "T" { longv = "temperature"}
 		sermon = sermon + longv + " is " + val + ".\n"
@@ -46,44 +51,47 @@ func speak() {
 }
 
 func human_presence() {
-	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
-	for t := range ticker.C {
-		os.Stderr.WriteString(t.String())
-		lock.Lock()
-		presence := arduino_stat["U"]
-		lock.Unlock()
-		if presence == 1 {
+	for {
+		presence := <-human
+		if presence {
 			if conf.Verbose { log.Printf("Human detected\n")}
 			speak()
-		} else {
-			if conf.Verbose { log.Printf("Human NOT detected\n")}
 		}
 	}
 }
 
 func alarm_mgr() {
-	// Open and map memory to access gpio, check for errors
-	pin := rpio.Pin(conf.Alarm_pin)
-        if err := rpio.Open(); err != nil {
-                log.Fatal(err)
-                os.Exit(1)
-        }
-	pin.Output()
-	pin.Low()
-        defer rpio.Close()
-	time.Sleep(time.Minute) //wait for PIR initialization
+	var pin  rpio.Pin
+	if conf.Alarms.Siren_enabled {
+		// Open and map memory to access gpio, check for errors
+		pin = rpio.Pin(conf.Outputs["alarm"].PIN)
+		if err := rpio.Open(); err != nil {
+		        log.Fatal(err)
+			os.Exit(1)
+	        }
+		pin.Output()
+		pin.Low()
+		defer rpio.Close()
+	}
+	time.Sleep(time.Minute)
 	//set a x seconds ticker
 	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
 
 	for _ = range ticker.C {
 		lock.Lock()
-		actual_temp := arduino_stat["T"]
+		actual_temp := arduino_linear_stat["T"]
 		lock.Unlock()
-		if actual_temp < conf.Critical_temp {
+		if actual_temp < conf.Alarms.Critical_temp {
 			log.Printf("Alarm triggered!!\n")
-			pin.High()
-			time.Sleep(time.Second*30)
-			pin.Low()
+			if conf.Alarms.Email_enabled {
+				send_email(strconv.Itoa(actual_temp))
+			}
+			if conf.Alarms.Siren_enabled {
+				pin.High()
+				time.Sleep(time.Second*30)
+				pin.Low()
+				time.Sleep(time.Second*30)
+			}
 		}
 	}
 }
@@ -104,7 +112,7 @@ func command_socket(socket string) (reply string) {
 
 
 func send_gpio1(gpio1 <-chan string) {
-	pin := rpio.Pin(conf.Socket1)
+	pin := rpio.Pin(conf.Outputs["socket1"].PIN)
 	pin.Output()
 	for {
 		status := <-gpio1
@@ -119,7 +127,7 @@ func send_gpio1(gpio1 <-chan string) {
 }
 
 func send_gpio2(gpio2 <-chan string) {
-	pin := rpio.Pin(conf.Socket2)
+	pin := rpio.Pin(conf.Outputs["socket2"].PIN)
 	pin.Output()
 	for {
 		status := <-gpio2
@@ -133,3 +141,63 @@ func send_gpio2(gpio2 <-chan string) {
 	}
 }
 
+func send_email(temp string) {
+
+	from := mail.Address{"", conf.Alarms.Mailbox}
+	to := mail.Address{"", conf.Alarms.Mailbox}
+	subj := "Greenhouse Temperature Alarm"
+	body := "Detected Low temperature (" + temp + "C )\n\n"
+	// Setup headers
+	headers := make(map[string]string)
+	headers["From"] = from.String()
+	headers["To"] = to.String()
+	headers["Subject"] = subj
+	headers["X-Priority"] = "1"
+	// Setup message
+	message := ""
+	for k, v := range headers {
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
+	}
+	message += "\r\n" + body
+	// Connect to the SMTP Server
+	servername := conf.Alarms.Smtp
+	host, _, _ := net.SplitHostPort(servername)
+	auth := smtp.PlainAuth("", conf.Alarms.Auth_user, conf.Alarms.Auth_pwd, host)
+	// TLS config
+	tlsconfig := &tls.Config{
+		InsecureSkipVerify: true,
+		ServerName:         host,
+	}
+	c, err := smtp.Dial(servername)
+	if err != nil {
+		log.Printf("%s", err)
+	}
+	c.StartTLS(tlsconfig)
+	// Auth
+	if err = c.Auth(auth); err != nil {
+		log.Printf("%s", err)
+		c.Quit()
+	} else {
+		// To && From
+		if err = c.Mail(from.Address); err != nil {
+			log.Printf("%s", err)
+		}
+		if err = c.Rcpt(to.Address); err != nil {
+			log.Printf("%s", err)
+		}
+		// Data
+		w, err := c.Data()
+		if err != nil {
+			log.Printf("%s", err)
+		}
+		_, err = w.Write([]byte(message))
+		if err != nil {
+			log.Printf("%s", err)
+		}
+		err = w.Close()
+		if err != nil {
+			log.Printf("%s", err)
+		}
+		c.Quit()
+	}
+}

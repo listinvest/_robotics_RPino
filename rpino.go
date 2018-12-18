@@ -9,9 +9,9 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"sync"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -34,19 +34,23 @@ var SerialStat = prometheus.NewCounterVec(prometheus.CounterOpts{
 	[]string{"type"})
 
 var (
-	verbose      bool
-	arduino_prev_stat map[string]int
-	arduino_stat map[string]int
-	rpi_stat     map[string]int
-	arduino_in   chan (string) // questions to  Arduino
-	arduino_out  chan (string) // replies from Arduino
-	start_time   time.Time
-	good_read int = 1
-	failed_read int = 1
-	conf *config
+	verbose           bool
+	raising           bool
+	arduino_prev_linear_stat map[string][]int
+	arduino_prev_exp_stat map[string][]int
+	arduino_linear_stat      map[string]int
+	arduino_exp_stat      map[string]int
+	arduino_cache_stat      map[string]int
+	serial_stat	  map[string]int
+	rpi_stat          map[string]int
+	arduino_in        chan (string) // questions to  Arduino
+	arduino_out       chan (string) // replies from Arduino
+	start_time        time.Time
+	conf              *config
+	first_run	  bool = true
 )
 
-var mutex = &sync.Mutex{}
+var lock = &sync.Mutex{}
 
 func init() {
 	prometheus.MustRegister(SensorStat)
@@ -61,7 +65,11 @@ func init() {
 		log.Fatal(err)
 	}
 	rpi_stat = make(map[string]int)
-
+	serial_stat = make(map[string]int)
+	serial_stat["good_read"] = 1
+	serial_stat["failed_read"] = 1
+	serial_stat["failed_atoi"] = 1
+	serial_stat["failed_interval"] = 1
 }
 
 func read_arduino() {
@@ -69,102 +77,142 @@ func read_arduino() {
 		log.Println("Arduino stats")
 	}
 	reply := ""
-	for _, s := range conf.Arduino_sensors {
+	for _, s := range conf.Arduino_linear_sensors {
 		log.Printf("sent instruction for: %s", s)
+		validated := 0
 		reply = comm2_arduino(s)
 		if reply != "null" {
 			output, err := strconv.Atoi(reply)
 			if err != nil {
 				log.Printf("Failed conversion: %s\n", err)
-				failed_read++
-				if arduino_prev_stat[s] != 0 {
-					mutex.Lock()
-					arduino_stat[s] = arduino_prev_stat[s]
-					mutex.Unlock()
-					log.Printf("failed read, using cached value\n")
-				}
+				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
+				validated = last_linear(s)
+				log.Printf("failed read, using cached value\n")
 			} else {
-				if arduino_prev_stat[s] == 0 {
-					mutex.Lock()
-					arduino_stat[s] = output
-					mutex.Unlock()
-					arduino_prev_stat[s] = output
+				ref_value := reference(s,output)
+				lower := float32(ref_value) * conf.Analysis.Lower_limit
+				upper := float32(ref_value) * conf.Analysis.Upper_limit
+				if float32(output) >= lower && float32(output) <= upper {
+					log.Printf("value for %s is %d, within the safe boundaries( %f - %d - %f )\n", s, output, lower, ref_value, upper)
+					validated = output
+					add_linear(s,output)
 				} else {
-					lower := float32(arduino_prev_stat[s]) * conf.Lower_limit
-					upper := float32(arduino_prev_stat[s]) * conf.Upper_limit
-					if output <= 20 {
-						log.Printf("Saving tiny value (%d)\n",output)
-						mutex.Lock()
-						arduino_prev_stat[s]= output
-						arduino_stat[s] = output
-						mutex.Unlock()
-					} else if  float32(output) >= lower && float32(output) <= upper {
-						log.Printf("value for %s is %d, within the safe boundaries( %f - %f )\n",s, output, lower, upper)
-						mutex.Lock()
-						arduino_stat[s] = output
-						mutex.Unlock()
-						arduino_prev_stat[s]= output
-
-					} else {
-						log.Printf("value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper, arduino_prev_stat[s])
-						mutex.Lock()
-						arduino_stat[s] = arduino_prev_stat[s]
-						//log.Printf("value stored: %d\n", output)
-						mutex.Unlock()
-					}
+					validated = last_linear(s)
+					log.Printf("value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper,validated)
+					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 				}
 			}
 		} else {
-			if arduino_prev_stat[s] != 0 {
-				log.Printf("failed read, using cached value\n")
-				mutex.Lock()
-				arduino_stat[s] = arduino_prev_stat[s]
-				mutex.Unlock()
-			}
-			failed_read++
+			log.Printf("failed read, using cached value\n")
+			validated = last_linear(s)
 		}
 		reply = ""
-
+		lock.Lock()
+		arduino_linear_stat[s] = validated
+		lock.Unlock()
 		time.Sleep(time.Second * 2)
 	}
-	check := comm2_arduino("S")
-	mutex.Lock()
-	arduino_stat["check_error"] = 0
-	if strings.Index(check,"ok") == -1 { // check if the reply is what we asked
-		log.Printf("Periodic check failed (%q)!\n", check)
-		arduino_stat["check_error"] = 1
+	for _, s := range conf.Arduino_exp_sensors {
+		log.Printf("sent instruction for: %s", s)
+		validated := 0
+		use_cached := true
+		if arduino_cache_stat[s] > conf.Analysis.Cache_limit {
+			// if we used the cached value X times, we will prohibit to use again, this will allow MMA to catch up
+			log.Printf("used cache too much, not using this time\n")
+			use_cached = false
+			arduino_cache_stat[s] = 0
+		}
+		reply = comm2_arduino(s)
+		if reply != "null" {
+			output, err := strconv.Atoi(reply)
+			if err != nil {
+				log.Printf("Failed conversion: %s\n", err)
+				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
+				validated = last_exp(s)
+				arduino_cache_stat[s] = arduino_cache_stat[s] + 1
+				log.Printf("failed read, using cached value\n")
+			} else {
+			//	ref_value_median := reference(s, output)
+				ref_value_mma := mma(s, output, conf.Analysis.Mma_1st, conf.Analysis.Mma_2st)
+				lower := float32(ref_value_mma) * (conf.Analysis.Lower_limit)
+				upper := float32(ref_value_mma) * (conf.Analysis.Upper_limit)
+				if float32(output) >= lower && float32(output) <= upper{
+					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
+					validated = output
+				} else {
+					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f - %f )\n", s, output, lower, ref_value_mma, upper)
+					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
+					if use_cached {
+						validated = last_exp(s) //will use prev value
+						arduino_cache_stat[s] = arduino_cache_stat[s] + 1
+					} else {
+						validated = output
+						log.Printf("Using real value\n")
+					}
+				}
+				// add every value we recieve to the history
+				add_exp(s,validated)
+			}
+		} else {
+			log.Printf("failed read, using cached value\n")
+			validated = last_exp(s)
+			arduino_cache_stat[s] = arduino_cache_stat[s] + 1
+		}
+		reply = ""
+		lock.Lock()
+		if validated > 0 {
+			inverted := int(1/float32(validated)*10000)
+			arduino_exp_stat[s] = inverted
+		}
+		lock.Unlock()
+		time.Sleep(time.Second * 2)
 	}
-	mutex.Unlock()
+	first_run = false
+	check := comm2_arduino("S")
+	lock.Lock()
+	arduino_linear_stat["check_error"] = 0
+	if strings.Index(check, "ok") == -1 { // check if the reply is what we asked
+		log.Printf("Periodic check failed (%q)!\n", check)
+		arduino_linear_stat["check_error"] = 1
+	}
+	lock.Unlock()
+	flush_serial()
 }
 
 func get_rpi_stat() {
 	if conf.Verbose {
 		log.Println("RPi stats")
 	}
-	mutex.Lock()
+	lock.Lock()
 	rpi_stat["wifi-signal"] = get_wireless_signal()
-	d,h := get_uptime()
+	d, h := get_uptime()
 	rpi_stat["rpi_uptime_days"] = d
 	rpi_stat["rpi_uptime_hours"] = h
-	rpi_stat["cput"] =  get_Cpu_temp()
-	mutex.Unlock()
+	rpi_stat["cput"] = get_Cpu_temp()
+	lock.Unlock()
 }
 
 func prometheus_update() {
-	mutex.Lock()
-	for k, v := range arduino_stat {
+	lock.Lock()
+	for k, v := range arduino_linear_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
 	}
+	for k, v := range arduino_exp_stat {
+		SensorStat.WithLabelValues(k).Set(float64(v))
+	}
+	dutyc := dutycycle("T")
+	SensorStat.WithLabelValues("dutycycle_T").Set(float64(dutyc))
+
 	for k, v := range rpi_stat {
 		RPIStat.WithLabelValues(k).Set(float64(v))
 	}
-	SerialStat.WithLabelValues("Good").Add(float64(good_read))
-	good_read = 0
-	SerialStat.WithLabelValues("Bad").Add(float64(failed_read))
-	failed_read = 0
-	mutex.Unlock()
-}
 
+	for k, v := range serial_stat {
+		SerialStat.WithLabelValues(k).Add(float64(v))
+		serial_stat[k] = 0
+	}
+	lock.Unlock()
+}
 
 func main() {
 	confPath := flag.String("c", "cfg.cfg", "Configuration file")
@@ -177,20 +225,25 @@ func main() {
 		conf.Verbose = true
 	}
 
-	n := len(conf.Arduino_sensors)
-	arduino_stat = make(map[string]int,n)
-	arduino_prev_stat = make(map[string]int,n)
-	for k,_ := range arduino_stat {
-		arduino_stat[k]=0
-	}
-	for k,_ := range arduino_prev_stat {
-		arduino_prev_stat[k]=0
-	}
+	// initialize maps
+	n := len(conf.Arduino_linear_sensors)
+	arduino_linear_stat = make(map[string]int, n)
+	arduino_prev_linear_stat = make(map[string][]int, n)
+	n = len(conf.Arduino_exp_sensors)
+	arduino_exp_stat = make(map[string]int, n)
+	arduino_cache_stat = make(map[string]int, n)
+	arduino_prev_exp_stat = make(map[string][]int, n)
+	history_setup()
 
-
-	log.Printf("Metrics will be exposed on %s\n", conf.Listen)
+	log.Printf("Prometheus metrics will be exposed on %s\n", conf.Listen)
 	if conf.Verbose {
 		log.Printf("Verbose logging is enabled")
+		if conf.Alarms.Siren_enabled {
+			log.Printf("Siren is configured on pin %d ",conf.Outputs["alarm"].PIN)
+		}
+		if conf.Alarms.Email_enabled {
+			log.Printf("Email notification is for  %s ",conf.Alarms.Mailbox)
+		}
 	}
 	flush_serial()
 	//set a x seconds ticker
@@ -204,10 +257,11 @@ func main() {
 			os.Stderr.WriteString(t.String())
 		}
 	}()
-	go send_gpio1( gpio1)
-	go send_gpio2( gpio2)
+	go send_gpio1(gpio1)
+	go send_gpio2(gpio2)
 	go human_presence()
 	go alarm_mgr()
+	go start_inputs()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)

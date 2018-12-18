@@ -21,11 +21,15 @@ func comm2_arduino(sensor string) (output string){
 		log.Printf("%s\n",err)
 	}
 	if conf.Verbose { log.Printf("Asked: %s", cmd) }
-	buf := make([]byte, 8)
+	//buf := make([]byte, 8)
+	buf := []byte("________")
 	nbytes, failed := s.Read(buf)
+	if nbytes < 2 {
+		_,  failed = s.Read(buf)
+	}
 	if failed != nil {
 		log.Printf("error: %s\n",failed)
-		failed_read++
+		serial_stat["failed_read"] = serial_stat["failed_read"] + 1
 		output = "null"
 	} else {
 		reply := string(buf)
@@ -36,10 +40,10 @@ func comm2_arduino(sensor string) (output string){
 			}
 			reply = strings.Replace(reply,sensor+": ","",1 )
 			output = reg.ReplaceAllString(reply, "")
-			good_read++
+			serial_stat["good_read"] =  serial_stat["good_read"] + 1
 		} else {
 			log.Printf("Unexpected reply\n")
-			failed_read++
+			serial_stat["failed_read"] = serial_stat["failed_read"] + 1
 			output = "null"
 		}
 	}
