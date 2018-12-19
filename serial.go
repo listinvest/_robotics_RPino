@@ -9,7 +9,7 @@ import (
 )
 
 func comm2_arduino(sensor string) (output string){
-	c := &serial.Config{Name: "/dev/ttyAMA0", Baud: 9600, ReadTimeout: time.Millisecond * 1750}
+	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
 	s, err := serial.OpenPort(c)
 	if err != nil {
 		log.Fatal(err)
@@ -21,7 +21,6 @@ func comm2_arduino(sensor string) (output string){
 		log.Printf("%s\n",err)
 	}
 	if conf.Verbose { log.Printf("Asked: %s", cmd) }
-	//buf := make([]byte, 8)
 	buf := []byte("________")
 	nbytes, failed := s.Read(buf)
 	if nbytes < 2 {
@@ -52,7 +51,7 @@ func comm2_arduino(sensor string) (output string){
 }
 
 func flush_serial() {
-	c := &serial.Config{Name: "/dev/ttyAMA0", Baud: 9600, ReadTimeout: time.Second * 5}
+	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
 	s, err := serial.OpenPort(c)
 	if err != nil {
 		log.Fatal(err)

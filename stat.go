@@ -93,13 +93,15 @@ func dutycycle(sensor string) (up int) {
 	if cache_count < 2 { return up }
 	prev := arduino_prev_linear_stat[sensor][cache_count-2]
 	if conf.Verbose { fmt.Printf("num %d > prev %d, raising: %v\n",num,prev,raising)}
-        if num > prev {
+        if num >= prev {
                 up = 1
 		raising = true
-        } else if num == prev && raising {
-                up = 1
 	} else {
 		raising = false
+	}
+
+        if num == prev && raising {
+                up = 1
 	}
 	if conf.Verbose { fmt.Printf("rampup status: %d, raising: %v\n",up,raising)}
 	return up

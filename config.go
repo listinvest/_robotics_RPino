@@ -16,6 +16,7 @@ type config struct {
 	Alarms		  alarms `toml:"alarms"`
 	Analysis	  analysis `toml:"data_analysis"`
 	Speech		  speech `toml:"speech"`
+	Serial		  serial_conf `toml:"serial"`
 }
 
 type sensor struct {
@@ -25,6 +26,13 @@ type sensor struct {
 type speech struct {
 	Sensors	 []string
 	Message	 string	`toml:"speech"`
+}
+
+type serial_conf struct {
+	Tty	 string	`toml:"tty"`
+	Baud     int `toml:"baud"`
+	Timeout     int `toml:"timeout"`
+
 }
 
 type alarms struct {
