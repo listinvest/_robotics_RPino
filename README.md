@@ -1,4 +1,4 @@
-### RPino
+# RPino
 
 ## Combining the power of Raspberry with the versatility of Arduino
 
