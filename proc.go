@@ -3,7 +3,6 @@ package main
 import (
         "fmt"
 	"io/ioutil"
-	"math"
 	"strings"
 	"strconv"
 )
@@ -17,7 +16,7 @@ func get_uptime() (days,hours int){
 	}
 	fields := strings.Fields(string(stats))
 	uptime,_ := strconv.ParseFloat(fields[0],32)
-	seconds := int(math.Round(uptime))
+	seconds := int(uptime)
 	days = seconds/86400
 	hours = (seconds%86400)/3600
 	//fmt.Printf("days:%d hours:%d\n",days,hours)

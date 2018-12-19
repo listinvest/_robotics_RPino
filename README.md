@@ -1,6 +1,6 @@
-RPino
+# RPino
 
-Combining the power of Raspberry with the versatility of Arduino
+## Combining the power of Raspberry with the versatility of Arduino
 
 Raspberry provides the OS to run Go, the Wifi connectivity, some GPIO ports and the power for the microcontroller. Arduino reads all sensors and report back to the RPi via a dedicate serial line.
 
@@ -12,14 +12,14 @@ Read the values to a greenhouse visitor
 Activate power sockets (also possible via API) 
 
 
-Components
+## Components
 
 The whole solutions uses few tightly integrated components and this schema illustrates all of them:
 
 Wifi  <— RaspberryPi -->  Arduino Uno —>  custom shield -> Sensors
                             \—>  GPIO
 
-Data Flow
+## Data Flow
 
 The data are being captured by Arduino and stored in Prometheus .
 
@@ -28,14 +28,13 @@ The data are being captured by Arduino and stored in Prometheus .
 Polling every x seconds, where X is configurable via config file and its frequency is the half of Prometheus scraping (to limit 0 reads)
 
 
-
-Serial commands:
+## Serial commands:
 
 I decided to create a simple interface over the serial line, which would be easy to extend and debug. So no binary encoding for example, but a simple question / answer protocol. This was chosen to ensure the robustness of the communication over a simple serial line: if a reading fail only one value from a sensor is lost, if a json message fail all sensor reading are missing.
 
  
 
-Sensor values treatment
+## Sensor values treatment
 
 The program validate the result for example to ask the temperature, it writes on the serial “T?” and it will read the reply and make sure it is what it asked by looking in the reply of the letter T ( example of response is “T: 23” ).
 In case of error you can define the behaviour: use the previous reading or set to zero. 
@@ -43,7 +42,7 @@ All analog sensors varies relative slowly and the serial communication may trunc
 The sensor must be within an interval which boundaries are plus or minus a percentage of the previous reading. If not the previous interval is used.
 
 
-Web interfaces:
+## Web interfaces:
 
 Access via HTTP allows you to gather lots of information
 
