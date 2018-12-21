@@ -66,10 +66,10 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 
 	case "/api/view_data":
-		w.Write([]byte(view_history()))
+		w.Write([]byte(view_data()))
 
 	case "/api/help":
-		w.Write([]byte("Available APIs:\n /socket\n/arduino_reset\n/alarm_test\n/history_reset\n/view_history\n"))
+		w.Write([]byte("Available APIs:\n/socket\n/arduino_reset\n/alarm_test\n/history_reset\n/view_data\n"))
 
 	default:
 		log.Printf("Unknown Api (%s)!\n", api_type)
@@ -77,22 +77,25 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func view_history() (reply string) {
-	reply = ""
+func view_data() (reply string) {
+	reply = "Linear sensors:\n"
 	for _, sensor := range conf.Arduino_linear_sensors {
 		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_linear_stat[sensor]) + ", prev: "
 		for _,v := range arduino_prev_linear_stat[sensor]{
 			reply = reply  + strconv.Itoa(v) + ", "
 		}
-		reply = reply + "\n"
+		R := reference(sensor,0)
+		reply = reply + "Reference: " + R +"\n"
 	}
+	reply = reply + "Exponential sensors:\n"
 	for _, sensor := range conf.Arduino_exp_sensors {
 		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_exp_stat[sensor]) + ", prev: "
 		for _,v := range arduino_prev_exp_stat[sensor]{
 			reply = reply  + strconv.Itoa(v) + ", "
 		}
+		M := mma(sensor,0)
 		used := strconv.Itoa(arduino_cache_stat[sensor])
-		reply = reply + "; used " + used + " times\n"
+		reply = reply + "; cache used " + used + " times, MMA: " + M + "\n"
 	}
 
 	return reply

@@ -23,7 +23,7 @@ func comm2_arduino(sensor string) (output string){
 	if conf.Verbose { log.Printf("Asked: %s", cmd) }
 	buf := []byte("________")
 	nbytes, failed := s.Read(buf)
-	if nbytes < 2 {
+	if nbytes < 3 {
 		_,  failed = s.Read(buf)
 	}
 	if failed != nil {

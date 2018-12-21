@@ -59,7 +59,7 @@ func reference(sensor string, value int) (ref int) {
 }
 
 // multiplied moving average
-func mma(sensor string, value int, ff int, sf int) (avg float32) {
+func mma(sensor string, value int) (avg float32) {
         lenght := len(arduino_prev_exp_stat[sensor])
 	if lenght <= 1 {
 		if conf.Verbose { fmt.Printf("history is emtpy, returning %d\n",value)}
@@ -72,12 +72,12 @@ func mma(sensor string, value int, ff int, sf int) (avg float32) {
         for i,v := range arduino_prev_exp_stat[sensor]{
 		if v == 0 { continue }
                 if i == lenght - 2{
-                        total = total + v*sf
-                        items = items + sf
+                        total = total + v * conf.Analysis.Mma_2st
+                        items = items + conf.Analysis.Mma_2st
                 }
                 if i == lenght -1 {
-                        total = total + v*ff
-                        items = items + ff
+                        total = total + v * conf.Analysis.Mma_1st
+                        items = items + conf.Analysis.Mma_1st
                 }
                 total = total + v
                 items = items + 1
@@ -92,7 +92,7 @@ func dutycycle(sensor string) (up int) {
 	cache_count:= len(arduino_prev_linear_stat[sensor])
 	if cache_count < 2 { return up }
 	prev := arduino_prev_linear_stat[sensor][cache_count-2]
-	if conf.Verbose { fmt.Printf("num %d > prev %d, raising: %v\n",num,prev,raising)}
+	if conf.Verbose { fmt.Printf("num %d, prev %d, raising: %v\n",num,prev,raising)}
         if num >= prev {
                 up = 1
 		raising = true
