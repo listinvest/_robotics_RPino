@@ -85,7 +85,7 @@ func view_data() (reply string) {
 			reply = reply  + strconv.Itoa(v) + ", "
 		}
 		R := reference(sensor,0)
-		reply = reply + "Reference: " + R +"\n"
+		reply = reply + "Reference: " + strconv.Itoa(R) +"\n"
 	}
 	reply = reply + "Exponential sensors:\n"
 	for _, sensor := range conf.Arduino_exp_sensors {
@@ -93,9 +93,9 @@ func view_data() (reply string) {
 		for _,v := range arduino_prev_exp_stat[sensor]{
 			reply = reply  + strconv.Itoa(v) + ", "
 		}
-		M := mma(sensor,0)
+		M := float64(mma(sensor,0))
 		used := strconv.Itoa(arduino_cache_stat[sensor])
-		reply = reply + "; cache used " + used + " times, MMA: " + M + "\n"
+		reply = reply + "; cache used " + used + " times, MMA: " + strconv.FormatFloat(M, 'E', -1, 64) + "\n"
 	}
 
 	return reply

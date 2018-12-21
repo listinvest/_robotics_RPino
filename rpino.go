@@ -109,6 +109,10 @@ func read_arduino() {
 					log.Printf("value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper,validated)
 					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 					arduino_cache_stat[s] = arduino_cache_stat[s] + 1
+					if !use_cached {
+						log.Printf("Using real value\n")
+						validated = output
+					}
 				}
 			}
 		} else {
@@ -117,10 +121,6 @@ func read_arduino() {
 			arduino_cache_stat[s] = arduino_cache_stat[s] + 1
 		}
 		reply = ""
-		if not use_cached {
-			log.Printf("Using real value\n")
-			validated = output
-		}
 		lock.Lock()
 		arduino_linear_stat[s] = validated
 		lock.Unlock()
@@ -157,6 +157,10 @@ func read_arduino() {
 					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 					validated = last_exp(s) //will use prev value
 					arduino_cache_stat[s] = arduino_cache_stat[s] + 1
+					if !use_cached {
+						log.Printf("Using real value\n")
+						validated = output
+					}
 				}
 				// add every value we recieve to the history
 				add_exp(s,validated)
@@ -168,11 +172,6 @@ func read_arduino() {
 		}
 
 		reply = ""
-		if not use_cached {
-			log.Printf("Using real value\n")
-			validated = output
-		}
-
 		lock.Lock()
 		if validated > 0 {
 			inverted := int(1/float32(validated)*10000)
