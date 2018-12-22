@@ -274,6 +274,7 @@ func main() {
 	go send_gpio2(gpio2)
 	go human_presence()
 	go alarm_mgr()
+	go siren_mgr()
 	go start_inputs()
 
 	http.Handle("/metrics", promhttp.Handler())

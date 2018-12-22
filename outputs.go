@@ -19,13 +19,14 @@ var (
 	gpio1        chan (string)
 	gpio2        chan (string)
 	human	     chan  (bool)
+	siren	     chan  (bool)
 )
 
 
 func init() {
 	gpio1 = make(chan string)
 	gpio2 = make(chan string)
-	human = make(chan bool)
+	siren = make(chan bool)
 
 	if err := rpio.Open(); err != nil {
 		log.Fatal(err)
@@ -60,19 +61,33 @@ func human_presence() {
 	}
 }
 
-func alarm_mgr() {
+func siren_mgr() {
+	if !conf.Alarms.Siren_enabled { return }
+	if conf.Verbose { log.Printf("Siren manager on\n") }
 	var pin  rpio.Pin
-	if conf.Alarms.Siren_enabled {
-		// Open and map memory to access gpio, check for errors
-		pin = rpio.Pin(conf.Outputs["alarm"].PIN)
-		if err := rpio.Open(); err != nil {
-		        log.Fatal(err)
-			os.Exit(1)
-	        }
-		pin.Output()
-		pin.Low()
-		defer rpio.Close()
+	// Open and map memory to access gpio, check for errors
+	pin = rpio.Pin(conf.Outputs["alarm"].PIN)
+	if err := rpio.Open(); err != nil {
+	        log.Fatal(err)
+		os.Exit(1)
+        }
+	pin.Output()
+	pin.Low()
+	defer rpio.Close()
+	for {
+		listentome := <- siren
+		if listentome {
+			if conf.Verbose {log.Printf("Siren ON!!\n") }
+			pin.High()
+			time.Sleep(time.Second*10)
+			if conf.Verbose {log.Printf("Siren OFF!!\n") }
+			pin.Low()
+			time.Sleep(time.Second*10)
+		}
 	}
+}
+
+func alarm_mgr() {
 	time.Sleep(time.Minute)
 	//set a x seconds ticker
 	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
@@ -87,14 +102,7 @@ func alarm_mgr() {
 				s := send_email(strconv.Itoa(actual_temp))
 				if s { log.Println("mail sent")}
 			}
-			if conf.Alarms.Siren_enabled {
-				log.Printf("Siren ON!!\n")
-				pin.High()
-				time.Sleep(time.Second*10)
-				log.Printf("Siren OFF!!\n")
-				pin.Low()
-				time.Sleep(time.Second*10)
-			}
+		if conf.Alarms.Siren_enabled { siren <- true }
 		}
 	}
 }
