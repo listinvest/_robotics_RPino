@@ -84,13 +84,16 @@ func alarm_mgr() {
 		if actual_temp < conf.Alarms.Critical_temp {
 			log.Printf("Alarm triggered!!\n")
 			if conf.Alarms.Email_enabled {
-				send_email(strconv.Itoa(actual_temp))
+				s := send_email(strconv.Itoa(actual_temp))
+				if s { log.Println("mail sent")}
 			}
 			if conf.Alarms.Siren_enabled {
+				log.Printf("Siren ON!!\n")
 				pin.High()
-				time.Sleep(time.Second*30)
+				time.Sleep(time.Second*10)
+				log.Printf("Siren OFF!!\n")
 				pin.Low()
-				time.Sleep(time.Second*30)
+				time.Sleep(time.Second*10)
 			}
 		}
 	}
@@ -141,7 +144,7 @@ func send_gpio2(gpio2 <-chan string) {
 	}
 }
 
-func send_email(temp string) {
+func send_email(temp string) (sent bool){
 
 	from := mail.Address{"", conf.Alarms.Mailbox}
 	to := mail.Address{"", conf.Alarms.Mailbox}
@@ -171,12 +174,14 @@ func send_email(temp string) {
 	c, err := smtp.Dial(servername)
 	if err != nil {
 		log.Printf("%s", err)
+		return false
 	}
 	c.StartTLS(tlsconfig)
 	// Auth
 	if err = c.Auth(auth); err != nil {
 		log.Printf("%s", err)
 		c.Quit()
+		return false
 	} else {
 		// To && From
 		if err = c.Mail(from.Address); err != nil {
@@ -199,5 +204,6 @@ func send_email(temp string) {
 			log.Printf("%s", err)
 		}
 		c.Quit()
+		return true
 	}
 }
