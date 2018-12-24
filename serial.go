@@ -16,6 +16,7 @@ func comm2_arduino(sensor string) (output string){
 	}
 	reg, err := regexp.Compile("[^0-9]+")
 	cmd := sensor+"?\n"
+        starts := time.Now()
 	_, err = s.Write([]byte(cmd))
 	if err != nil {
 		log.Printf("%s\n",err)
@@ -23,6 +24,8 @@ func comm2_arduino(sensor string) (output string){
 	if conf.Verbose { log.Printf("Asked: %s", cmd) }
 	buf := []byte("________")
 	nbytes, failed := s.Read(buf)
+        t := time.Now()
+	elapseds := t.Sub(starts)
 	if nbytes < 3 {
 		_,  failed = s.Read(buf)
 	}
@@ -32,7 +35,7 @@ func comm2_arduino(sensor string) (output string){
 		output = "null"
 	} else {
 		reply := string(buf)
-		if conf.Verbose { log.Printf("Got %d bytes: %s", nbytes,reply) }
+		if conf.Verbose { log.Printf("Got %d bytes: %s, took %d", nbytes,reply, elapseds.Seconds()) }
 		if strings.Index(reply,sensor) == 0 { // check if the reply is what we asked
 			if sensor == "S" {
 				return "ok"

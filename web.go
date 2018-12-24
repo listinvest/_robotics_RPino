@@ -22,6 +22,11 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 	for k, v := range rpi_stat {
 		all_data[k] = v
 	}
+	if arduino_linear_stat["T"] < conf.Alarms.Critical_temp {
+		all_data["siren"]=1
+	} else {
+		all_data["siren"]=0
+	}
 	lock.Unlock()
 	//add extra diagnostic fields
 	t := time.Now()
@@ -58,7 +63,7 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 
 	case "/api/alarm_test":
-		alarm_mgr()
+		test_siren()
 		w.Write([]byte("ok"))
 
 	case "/api/history_reset":
@@ -89,7 +94,8 @@ func view_data() (reply string) {
 	}
 	reply = reply + "Exponential sensors:\n"
 	for _, sensor := range conf.Arduino_exp_sensors {
-		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_exp_stat[sensor]) + ", prev: "
+		last := len(arduino_prev_exp_stat[sensor])-1
+		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_prev_exp_stat[sensor][last]) + ", prev: "
 		for _,v := range arduino_prev_exp_stat[sensor]{
 			reply = reply  + strconv.Itoa(v) + ", "
 		}

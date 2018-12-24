@@ -61,6 +61,11 @@ func human_presence() {
 	}
 }
 
+func test_siren() {
+	siren <- true
+	return
+}
+
 func siren_mgr() {
 	if !conf.Alarms.Siren_enabled { return }
 	if conf.Verbose { log.Printf("Siren manager on\n") }
@@ -75,7 +80,8 @@ func siren_mgr() {
 	pin.Low()
 	defer rpio.Close()
 	for {
-		listentome := <- siren
+		listentome := false
+		listentome = <-siren
 		if listentome {
 			if conf.Verbose {log.Printf("Siren ON!!\n") }
 			pin.High()
@@ -93,16 +99,18 @@ func alarm_mgr() {
 	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
 
 	for _ = range ticker.C {
-		lock.Lock()
-		actual_temp := arduino_linear_stat["T"]
-		lock.Unlock()
-		if actual_temp < conf.Alarms.Critical_temp {
-			log.Printf("Alarm triggered!!\n")
+	lock.Lock()
+	actual_temp := arduino_linear_stat["T"]
+	lock.Unlock()
+	if actual_temp < conf.Alarms.Critical_temp {
+			log.Printf("Alarm triggered %d < %d!!\n",  actual_temp, conf.Alarms.Critical_temp)
 			if conf.Alarms.Email_enabled {
 				s := send_email(strconv.Itoa(actual_temp))
 				if s { log.Println("mail sent")}
 			}
-		if conf.Alarms.Siren_enabled { siren <- true }
+			if conf.Alarms.Siren_enabled {
+				siren <- true
+			}
 		}
 	}
 }

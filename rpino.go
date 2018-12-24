@@ -112,6 +112,7 @@ func read_arduino() {
 					if !use_cached {
 						log.Printf("Using real value\n")
 						validated = output
+						add_linear(s,output)
 					}
 				}
 			}
@@ -252,7 +253,7 @@ func main() {
 	if conf.Verbose {
 		log.Printf("Verbose logging is enabled")
 		if conf.Alarms.Siren_enabled {
-			log.Printf("Siren is configured on pin %d ",conf.Outputs["alarm"].PIN)
+			log.Printf("Siren for low temperature %d is configured on pin %d ", conf.Outputs["alarm"].PIN, conf.Alarms.Critical_temp)
 		}
 		if conf.Alarms.Email_enabled {
 			log.Printf("Email notification is for  %s ",conf.Alarms.Mailbox)
