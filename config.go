@@ -21,10 +21,16 @@ type rpigpio struct {
 	PIN int
 }
 
+type value struct {
+	Value int
+}
+
 type sensors struct {
 	Arduino_linear[]	string `toml:"arduino_linear"`
 	Arduino_exp[]		string `toml:"arduino_exp"`
 	Poll_interval		int    `toml:"poll_interval"`
+	Adj_H			map[string]int
+	Adj_T			map[string]int
 }
 
 type speech struct {

@@ -77,17 +77,20 @@ func siren_mgr() {
 		os.Exit(1)
         }
 	pin.Output()
-	pin.Low()
+	pin.High()
+	//pin.Low()
 	defer rpio.Close()
 	for {
 		listentome := false
 		listentome = <-siren
 		if listentome {
 			if conf.Verbose {log.Printf("Siren ON!!\n") }
-			pin.High()
+			pin.Low()
+			//pin.High()
 			time.Sleep(time.Second*10)
 			if conf.Verbose {log.Printf("Siren OFF!!\n") }
-			pin.Low()
+			pin.High()
+			//pin.Low()
 			time.Sleep(time.Second*10)
 		}
 	}

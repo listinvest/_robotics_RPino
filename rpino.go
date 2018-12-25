@@ -254,11 +254,17 @@ func main() {
 	if conf.Verbose {
 		log.Printf("Verbose logging is enabled")
 		if conf.Alarms.Siren_enabled {
-			log.Printf("Siren for low temperature %d is configured on pin %d ", conf.Outputs["alarm"].PIN, conf.Alarms.Critical_temp)
+			log.Printf("Siren on pin %d for low temperature set on %d", conf.Outputs["alarm"].PIN, conf.Alarms.Critical_temp)
 		}
 		if conf.Alarms.Email_enabled {
 			log.Printf("Email notification is for  %s ",conf.Alarms.Mailbox)
 		}
+		log.Printf("Adjustments: H %d, T %d ",conf.Sensors.Adj_H["value"], conf.Sensors.Adj_T["value"])
+		//for k,v := range conf.Sensors {
+		//	if strings.Contains(k,"Adj") {
+		//		log.Printf("k %s, v %d ",k, conf.Sensors.k["value"])
+		//	}
+		//}
 	}
 	flush_serial()
 	//set a x seconds ticker
