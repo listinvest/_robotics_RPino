@@ -77,7 +77,7 @@ func read_arduino() {
 		log.Println("Arduino stats")
 	}
 	reply := ""
-	for _, s := range conf.Arduino_linear_sensors {
+	for _, s := range conf.Sensors.Arduino_linear {
 		log.Printf("sent instruction for: %s", s)
 		validated := 0
 		use_cached := true
@@ -128,7 +128,7 @@ func read_arduino() {
 		time.Sleep(time.Second * 2)
 	}
 	time.Sleep(time.Second * 2)
-	for _, s := range conf.Arduino_exp_sensors {
+	for _, s := range conf.Sensors.Arduino_exp {
 		log.Printf("sent instruction for: %s", s)
 		validated := 0
 		use_cached := true
@@ -241,10 +241,10 @@ func main() {
 	}
 
 	// initialize maps
-	n := len(conf.Arduino_linear_sensors)
+	n := len(conf.Sensors.Arduino_linear)
 	arduino_linear_stat = make(map[string]int, n)
 	arduino_prev_linear_stat = make(map[string][]int, n)
-	n = len(conf.Arduino_exp_sensors)
+	n = len(conf.Sensors.Arduino_exp)
 	arduino_exp_stat = make(map[string]int, n)
 	arduino_cache_stat = make(map[string]int, n)
 	arduino_prev_exp_stat = make(map[string][]int, n)
@@ -262,7 +262,7 @@ func main() {
 	}
 	flush_serial()
 	//set a x seconds ticker
-	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
+	ticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
 	go func() {
 		for t := range ticker.C {
 			get_rpi_stat()

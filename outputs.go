@@ -36,7 +36,7 @@ func init() {
 func speak() {
 	longv := ""
 	sermon := "espeak -g 5 \"" + conf.Speech.Message + ".\n"
-	for _, v := range conf.Speech.Sensors {
+	for _, v := range conf.Speech.Read {
 		val := strconv.Itoa(arduino_linear_stat[v])
 		if v == "H" { longv = "humidity"}
 		if v == "T" { longv = "temperature"}
@@ -96,7 +96,7 @@ func siren_mgr() {
 func alarm_mgr() {
 	time.Sleep(time.Minute)
 	//set a x seconds ticker
-	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second)
+	ticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
 
 	for _ = range ticker.C {
 	lock.Lock()

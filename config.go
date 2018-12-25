@@ -7,24 +7,28 @@ import (
 
 type config struct {
 	Listen            string   `toml:"listen"`
-	Poll_interval	  int	   `toml:"poll_interval"`
-	Arduino_linear_sensors   []string `toml:"arduino_linear_sensors"`
-	Arduino_exp_sensors   []string `toml:"arduino_exp_sensors"`
+	Sensors		  sensors  `toml:"sensors"`
 	Verbose           bool     `toml:"verbose"`
-	Inputs		  map[string]sensor
-	Outputs		  map[string]sensor
+	Inputs		  map[string]rpigpio
+	Outputs		  map[string]rpigpio
 	Alarms		  alarms `toml:"alarms"`
 	Analysis	  analysis `toml:"data_analysis"`
 	Speech		  speech `toml:"speech"`
 	Serial		  serial_conf `toml:"serial"`
 }
 
-type sensor struct {
+type rpigpio struct {
 	PIN int
 }
 
+type sensors struct {
+	Arduino_linear[]	string `toml:"arduino_linear"`
+	Arduino_exp[]		string `toml:"arduino_exp"`
+	Poll_interval		int    `toml:"poll_interval"`
+}
+
 type speech struct {
-	Sensors	 []string
+	Read	 []string
 	Message	 string	`toml:"speech"`
 }
 

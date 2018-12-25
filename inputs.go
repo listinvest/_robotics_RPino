@@ -27,7 +27,7 @@ func gpio_watch(sensor string,Spin int) {
 	pin.Input()
         defer rpio.Close()
 	//set a x seconds ticker
-	ticker := time.NewTicker(time.Duration(conf.Poll_interval) * time.Second/2)
+	ticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second/2)
 
 	for _ = range ticker.C {
 		res := pin.Read()

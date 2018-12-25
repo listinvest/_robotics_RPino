@@ -84,7 +84,7 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 
 func view_data() (reply string) {
 	reply = "Linear sensors:\n"
-	for _, sensor := range conf.Arduino_linear_sensors {
+	for _, sensor := range conf.Sensors.Arduino_linear {
 		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_linear_stat[sensor]) + ", prev: "
 		for _,v := range arduino_prev_linear_stat[sensor]{
 			reply = reply  + strconv.Itoa(v) + ", "
@@ -93,7 +93,7 @@ func view_data() (reply string) {
 		reply = reply + "Reference: " + strconv.Itoa(R) +"\n"
 	}
 	reply = reply + "Exponential sensors:\n"
-	for _, sensor := range conf.Arduino_exp_sensors {
+	for _, sensor := range conf.Sensors.Arduino_exp {
 		last := len(arduino_prev_exp_stat[sensor])-1
 		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_prev_exp_stat[sensor][last]) + ", prev: "
 		for _,v := range arduino_prev_exp_stat[sensor]{
