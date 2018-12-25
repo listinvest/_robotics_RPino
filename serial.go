@@ -35,7 +35,7 @@ func comm2_arduino(sensor string) (output string){
 		output = "null"
 	} else {
 		reply := string(buf)
-		if conf.Verbose { log.Printf("Got %d bytes: %s, took %d", nbytes,reply, elapseds.Seconds()) }
+		if conf.Verbose { log.Printf("Got %d bytes: %s, took %f", nbytes,reply, elapseds.Seconds()) }
 		if strings.Index(reply,sensor) == 0 { // check if the reply is what we asked
 			if sensor == "S" {
 				return "ok"

@@ -106,7 +106,7 @@ func read_arduino() {
 					add_linear(s,output)
 				} else {
 					validated = last_linear(s)
-					log.Printf("value for %s is %d, which outside the safe boundaries( %f - %f ), using cached value %d\n", s, output, lower, upper,validated)
+					log.Printf("value for %s is %d, which outside the safe boundaries( %f - %d - %f ), using cached value %d\n", s, output, lower,ref_value, upper,validated)
 					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 					arduino_cache_stat[s] = arduino_cache_stat[s] + 1
 					if !use_cached {
@@ -127,6 +127,7 @@ func read_arduino() {
 		lock.Unlock()
 		time.Sleep(time.Second * 2)
 	}
+	time.Sleep(time.Second * 2)
 	for _, s := range conf.Arduino_exp_sensors {
 		log.Printf("sent instruction for: %s", s)
 		validated := 0
@@ -151,7 +152,7 @@ func read_arduino() {
 				lower := float32(ref_value_mma) * (conf.Analysis.Lower_limit)
 				upper := float32(ref_value_mma) * (conf.Analysis.Upper_limit)
 				if float32(output) >= lower && float32(output) <= upper{
-					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f )\n", s, output, lower, upper)
+					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f - %f )\n", s, output, lower, ref_value_mma, upper)
 					validated = output
 				} else {
 					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f - %f )\n", s, output, lower, ref_value_mma, upper)

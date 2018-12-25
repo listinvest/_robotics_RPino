@@ -62,8 +62,8 @@ func human_presence() {
 }
 
 func test_siren() {
+	if conf.Verbose { log.Printf("Testing siren...\n")}
 	siren <- true
-	return
 }
 
 func siren_mgr() {
