@@ -250,6 +250,7 @@ func main() {
 	arduino_prev_exp_stat = make(map[string][]int, n)
 	history_setup()
 
+	log.SetPrefix("[RPino] ")
 	log.Printf("Prometheus metrics will be exposed on %s\n", conf.Listen)
 	if conf.Verbose {
 		log.Printf("Verbose logging is enabled")
