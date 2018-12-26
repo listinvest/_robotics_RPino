@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -23,18 +23,18 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 		all_data[k] = v
 	}
 	if arduino_linear_stat["T"] < conf.Alarms.Critical_temp {
-		all_data["siren"]=1
+		all_data["siren"] = 1
 	} else {
-		all_data["siren"]=0
+		all_data["siren"] = 0
 	}
 	lock.Unlock()
 	//add extra diagnostic fields
 	t := time.Now()
 	elapsed := t.Sub(start_time)
-	hours := int(elapsed.Hours())%24
-	days := int(elapsed.Hours())/24
-	all_data["rpino_uptime_days"]=days
-	all_data["rpino_uptime_hours"]=hours
+	hours := int(elapsed.Hours()) % 24
+	days := int(elapsed.Hours()) / 24
+	all_data["rpino_uptime_days"] = days
+	all_data["rpino_uptime_hours"] = hours
 	msg, _ := json.Marshal(all_data)
 	w.Write(msg)
 }
@@ -86,20 +86,20 @@ func view_data() (reply string) {
 	reply = "Linear sensors:\n"
 	for _, sensor := range conf.Sensors.Arduino_linear {
 		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_linear_stat[sensor]) + ", prev: "
-		for _,v := range arduino_prev_linear_stat[sensor]{
-			reply = reply  + strconv.Itoa(v) + ", "
+		for _, v := range arduino_prev_linear_stat[sensor] {
+			reply = reply + strconv.Itoa(v) + ", "
 		}
-		R := reference(sensor,0)
-		reply = reply + "Reference: " + strconv.Itoa(R) +"\n"
+		R := reference(sensor, 0)
+		reply = reply + "Reference: " + strconv.Itoa(R) + "\n"
 	}
 	reply = reply + "Exponential sensors:\n"
 	for _, sensor := range conf.Sensors.Arduino_exp {
-		last := len(arduino_prev_exp_stat[sensor])-1
+		last := len(arduino_prev_exp_stat[sensor]) - 1
 		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_prev_exp_stat[sensor][last]) + ", prev: "
-		for _,v := range arduino_prev_exp_stat[sensor]{
-			reply = reply  + strconv.Itoa(v) + ", "
+		for _, v := range arduino_prev_exp_stat[sensor] {
+			reply = reply + strconv.Itoa(v) + ", "
 		}
-		M := float64(mma(sensor,0))
+		M := float64(mma(sensor, 0))
 		used := strconv.Itoa(arduino_cache_stat[sensor])
 		reply = reply + "; cache used " + used + " times, MMA: " + strconv.FormatFloat(M, 'E', -1, 64) + "\n"
 	}
@@ -110,9 +110,9 @@ func view_data() (reply string) {
 func mainpage(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`
          <html>
-         <head><title>Rpino Exporter</title></head>
+         <head><title>RPino</title></head>
          <body>
-         <h1>Rpino Exporter</h1>
+         <h1>Rpino Web Interface</h1>
          <h2>parameters '` + strings.Join(os.Args, " ") + `'</h2>
          <p><a href='/metrics'><b>Prometheus Metrics</b></a></p>
          <p><a href='/json'><b>JSON Metrics</b></a></p>
@@ -122,4 +122,3 @@ func mainpage(w http.ResponseWriter, r *http.Request) {
          `))
 
 }
-

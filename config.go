@@ -1,20 +1,20 @@
 package main
 
 import (
-	"log"
 	toml "github.com/BurntSushi/toml"
+	"log"
 )
 
 type config struct {
-	Listen            string   `toml:"listen"`
-	Sensors		  sensors  `toml:"sensors"`
-	Verbose           bool     `toml:"verbose"`
-	Inputs		  map[string]rpigpio
-	Outputs		  map[string]rpigpio
-	Alarms		  alarms `toml:"alarms"`
-	Analysis	  analysis `toml:"data_analysis"`
-	Speech		  speech `toml:"speech"`
-	Serial		  serial_conf `toml:"serial"`
+	Listen   string  `toml:"listen"`
+	Sensors  sensors `toml:"sensors"`
+	Verbose  bool    `toml:"verbose"`
+	Inputs   map[string]rpigpio
+	Outputs  map[string]rpigpio
+	Alarms   alarms      `toml:"alarms"`
+	Analysis analysis    `toml:"data_analysis"`
+	Speech   speech      `toml:"speech"`
+	Serial   serial_conf `toml:"serial"`
 }
 
 type rpigpio struct {
@@ -26,47 +26,46 @@ type value struct {
 }
 
 type sensors struct {
-	Arduino_linear[]	string `toml:"arduino_linear"`
-	Arduino_exp[]		string `toml:"arduino_exp"`
-	Poll_interval		int    `toml:"poll_interval"`
-	Adj_H			map[string]int
-	Adj_T			map[string]int
+	Arduino_linear []string `toml:"arduino_linear"`
+	Arduino_exp    []string `toml:"arduino_exp"`
+	Poll_interval  int      `toml:"poll_interval"`
+	Adj_H          map[string]int
+	Adj_T          map[string]int
 }
 
 type speech struct {
-	Read	 []string
-	Message	 string	`toml:"speech"`
+	Read    []string
+	Message string `toml:"speech"`
 }
 
 type serial_conf struct {
-	Tty	 string	`toml:"tty"`
-	Baud     int `toml:"baud"`
-	Timeout     int `toml:"timeout"`
-
+	Tty     string `toml:"tty"`
+	Baud    int    `toml:"baud"`
+	Timeout int    `toml:"timeout"`
 }
 
 type alarms struct {
-	Critical_temp  int `toml:"critical_temp"`
+	Critical_temp int `toml:"critical_temp"`
 	Email_enabled bool
 	Siren_enabled bool
-	Smtp string `toml:"smtp"`
-	Mailbox string `toml:"mailbox"`
-	Auth_user string `toml:"auth_user"`
-	Auth_pwd string `toml:"auth_pwd"`
+	Presence      bool
+	Smtp          string `toml:"smtp"`
+	Mailbox       string `toml:"mailbox"`
+	Auth_user     string `toml:"auth_user"`
+	Auth_pwd      string `toml:"auth_pwd"`
 }
 
 type analysis struct {
-	Depth		  int	   `toml:"historic_depth"`
-	Cache_limit	  int	   `toml:"cache_limit"`
-	Percentile	  float32  `toml:"percentile"`
-	Upper_limit	  float32  `toml:"upper_limit"`
-	Lower_limit	  float32  `toml:"lower_limit"`
-	Mma_1st		  int	   `toml:"mma_1st"`
-	Mma_2st		  int	   `toml:"mma_2st"`
+	Depth       int     `toml:"historic_depth"`
+	Cache_limit int     `toml:"cache_limit"`
+	Percentile  float32 `toml:"percentile"`
+	Upper_limit float32 `toml:"upper_limit"`
+	Lower_limit float32 `toml:"lower_limit"`
+	Mma_1st     int     `toml:"mma_1st"`
+	Mma_2st     int     `toml:"mma_2st"`
 }
 
-
-func loadConfig(path string) (*config) {
+func loadConfig(path string) *config {
 	conf := &config{}
 	_, err := toml.DecodeFile(path, conf)
 	if err != nil {
@@ -75,4 +74,3 @@ func loadConfig(path string) (*config) {
 
 	return conf
 }
-

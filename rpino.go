@@ -210,7 +210,15 @@ func get_rpi_stat() {
 func prometheus_update() {
 	lock.Lock()
 	for k, v := range arduino_linear_stat {
-		SensorStat.WithLabelValues(k).Set(float64(v))
+		if conf.Sensors.Adj_T["value"] != nil and k == "T" {
+			adjusted := v + conf.Sensors.Adj_T["value"]
+			SensorStat.WithLabelValues(k).Set(float64(adjusted))
+		} else if conf.Sensors.Adj_H["value"] != nil and k == "H" {
+			adjusted := v + conf.Sensors.Adj_H["value"]
+			SensorStat.WithLabelValues(k).Set(float64(adjusted))
+		} else {
+			SensorStat.WithLabelValues(k).Set(float64(adjusted))
+		}
 	}
 	for k, v := range arduino_exp_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
@@ -225,6 +233,9 @@ func prometheus_update() {
 	for k, v := range serial_stat {
 		SerialStat.WithLabelValues(k).Add(float64(v))
 		serial_stat[k] = 0
+	}
+	if arduino_linear_stat["check_error"] == 1 {
+		SerialStat.WithLabelValues("check_error").Add(float64(1))
 	}
 	lock.Unlock()
 }
@@ -281,7 +292,7 @@ func main() {
 	}()
 	go send_gpio1(gpio1)
 	go send_gpio2(gpio2)
-	go human_presence()
+	go input_presence()
 	go alarm_mgr()
 	go siren_mgr()
 	go start_inputs()

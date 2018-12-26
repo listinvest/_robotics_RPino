@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/stianeikeland/go-rpio"
 	"log"
 	"net"
 	"net/mail"
@@ -11,17 +12,14 @@ import (
 	"os/exec"
 	"strconv"
 	"time"
-	"github.com/stianeikeland/go-rpio"
 )
-
 
 var (
-	gpio1        chan (string)
-	gpio2        chan (string)
-	human	     chan  (bool)
-	siren	     chan  (bool)
+	gpio1 chan (string)
+	gpio2 chan (string)
+	inout chan (bool)
+	siren chan (bool)
 )
-
 
 func init() {
 	gpio1 = make(chan string)
@@ -38,8 +36,12 @@ func speak() {
 	sermon := "espeak -g 5 \"" + conf.Speech.Message + ".\n"
 	for _, v := range conf.Speech.Read {
 		val := strconv.Itoa(arduino_linear_stat[v])
-		if v == "H" { longv = "humidity"}
-		if v == "T" { longv = "temperature"}
+		if v == "H" {
+			longv = "humidity"
+		}
+		if v == "T" {
+			longv = "temperature"
+		}
 		sermon = sermon + longv + " is " + val + ".\n"
 	}
 	sermon = sermon + "\""
@@ -51,31 +53,43 @@ func speak() {
 	}
 }
 
-func human_presence() {
+func input_presence() {
 	for {
-		presence := <-human
+		presence := <-input
 		if presence {
-			if conf.Verbose { log.Printf("Human detected\n")}
-			speak()
+			if conf.Verbose {
+				log.Printf("Input detected\n")
+			}
+			// do something useful
 		}
 	}
 }
 
 func test_siren() {
-	if conf.Verbose { log.Printf("Testing siren...\n")}
+	if conf.Verbose {
+		log.Printf("Testing siren...\n")
+	}
 	siren <- true
 }
 
 func siren_mgr() {
-	if !conf.Alarms.Siren_enabled { return }
-	if conf.Verbose { log.Printf("Siren manager on\n") }
-	var pin  rpio.Pin
+	if !conf.Alarms.Siren_enabled {
+		return
+	}
+	if conf.Verbose {
+		log.Printf("Siren manager on\n")
+	}
+	if conf.Outputs["alarm"].PIN == nil {
+		log.Fatal("Alarm configured but GPIO for the relay is not!")
+		os.Exit(1)
+	}
+	var pin rpio.Pin
 	// Open and map memory to access gpio, check for errors
 	pin = rpio.Pin(conf.Outputs["alarm"].PIN)
 	if err := rpio.Open(); err != nil {
-	        log.Fatal(err)
+		log.Fatal(err)
 		os.Exit(1)
-        }
+	}
 	pin.Output()
 	pin.High()
 	//pin.Low()
@@ -84,14 +98,18 @@ func siren_mgr() {
 		listentome := false
 		listentome = <-siren
 		if listentome {
-			if conf.Verbose {log.Printf("Siren ON!!\n") }
+			if conf.Verbose {
+				log.Printf("Siren ON!!\n")
+			}
 			pin.Low()
 			//pin.High()
-			time.Sleep(time.Second*10)
-			if conf.Verbose {log.Printf("Siren OFF!!\n") }
+			time.Sleep(time.Second * 10)
+			if conf.Verbose {
+				log.Printf("Siren OFF!!\n")
+			}
 			pin.High()
 			//pin.Low()
-			time.Sleep(time.Second*10)
+			time.Sleep(time.Second * 10)
 		}
 	}
 }
@@ -100,24 +118,36 @@ func alarm_mgr() {
 	time.Sleep(time.Minute)
 	//set a x seconds ticker
 	ticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
+	// check if presence and U sensor are both setup (it has been just initialized)
+	if conf.Alarms.Presence && arduino_linear_stat["U"]==0  {
+		log.Fatal("Alarm configured but GPIO for the relay is not!")
+		os.Exit(1)
+	}
 
 	for _ = range ticker.C {
-	lock.Lock()
-	actual_temp := arduino_linear_stat["T"]
-	lock.Unlock()
-	if actual_temp < conf.Alarms.Critical_temp {
-			log.Printf("Alarm triggered %d < %d!!\n",  actual_temp, conf.Alarms.Critical_temp)
+		lock.Lock()
+		actual_temp := arduino_linear_stat["T"]
+		//human := arduino_linear_stat["U"]
+		lock.Unlock()
+		// temperature alarm
+		if actual_temp < conf.Alarms.Critical_temp {
+			log.Printf("Alarm triggered %d < %d!!\n", actual_temp, conf.Alarms.Critical_temp)
 			if conf.Alarms.Email_enabled {
 				s := send_email(strconv.Itoa(actual_temp))
-				if s { log.Println("mail sent")}
+				if s {
+					log.Println("mail sent")
+				}
 			}
 			if conf.Alarms.Siren_enabled {
 				siren <- true
 			}
 		}
+		// presence alarm
+		if conf.Alarms.Presence {
+			siren <- true
+		}
 	}
 }
-
 
 func command_socket(socket string) (reply string) {
 	if socket == "on" {
@@ -131,7 +161,6 @@ func command_socket(socket string) (reply string) {
 	}
 	return reply
 }
-
 
 func send_gpio1(gpio1 <-chan string) {
 	pin := rpio.Pin(conf.Outputs["socket1"].PIN)
@@ -163,7 +192,7 @@ func send_gpio2(gpio2 <-chan string) {
 	}
 }
 
-func send_email(temp string) (sent bool){
+func send_email(temp string) (sent bool) {
 
 	from := mail.Address{"", conf.Alarms.Mailbox}
 	to := mail.Address{"", conf.Alarms.Mailbox}

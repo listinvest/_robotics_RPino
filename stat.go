@@ -5,28 +5,26 @@ import (
 	"sort"
 )
 
-
-func nsamples(sensor string)(num int){
+func nsamples(sensor string) (num int) {
 	num = len(arduino_prev_exp_stat[sensor])
 	return num
 }
 
-func last_linear(sensor string)(num int){
-	lenght := len(arduino_prev_linear_stat[sensor])-1
+func last_linear(sensor string) (num int) {
+	lenght := len(arduino_prev_linear_stat[sensor]) - 1
 	num = arduino_prev_linear_stat[sensor][lenght]
 	return num
 }
 
-func last_exp(sensor string)(num int){
-	lenght := len(arduino_prev_exp_stat[sensor])-1
+func last_exp(sensor string) (num int) {
+	lenght := len(arduino_prev_exp_stat[sensor]) - 1
 	num = arduino_prev_exp_stat[sensor][lenght]
 	return num
 }
 
-
 func add_linear(sensor string, value int) {
 	lenght := len(arduino_prev_linear_stat[sensor])
-	arduino_prev_linear_stat[sensor] = append(arduino_prev_linear_stat[sensor],value)
+	arduino_prev_linear_stat[sensor] = append(arduino_prev_linear_stat[sensor], value)
 	//removing oldest value
 	if lenght >= conf.Analysis.Depth {
 		arduino_prev_linear_stat[sensor] = arduino_prev_linear_stat[sensor][1:]
@@ -36,7 +34,7 @@ func add_linear(sensor string, value int) {
 
 func add_exp(sensor string, value int) {
 	lenght := len(arduino_prev_exp_stat[sensor])
-	arduino_prev_exp_stat[sensor] = append(arduino_prev_exp_stat[sensor],value)
+	arduino_prev_exp_stat[sensor] = append(arduino_prev_exp_stat[sensor], value)
 	//removing oldest value
 	if lenght >= conf.Analysis.Depth {
 		arduino_prev_exp_stat[sensor] = arduino_prev_exp_stat[sensor][1:]
@@ -47,63 +45,77 @@ func add_exp(sensor string, value int) {
 func reference(sensor string, value int) (ref int) {
 	lenght := float32(len(arduino_prev_linear_stat[sensor]))
 	if lenght == 1 {
-		if conf.Verbose { fmt.Printf("history is emtpy, returning %d\n",value)}
+		if conf.Verbose {
+			fmt.Printf("history is emtpy, returning %d\n", value)
+		}
 		ref = value
 		return ref
 	}
 	sort.Ints(arduino_prev_linear_stat[sensor])
 	ref = int(lenght * conf.Analysis.Percentile)
-	if verbose { fmt.Printf("index %d, value: %d\n",ref,arduino_prev_linear_stat[sensor][ref]) }
+	if verbose {
+		fmt.Printf("index %d, value: %d\n", ref, arduino_prev_linear_stat[sensor][ref])
+	}
 	ref = arduino_prev_linear_stat[sensor][ref]
 	return ref
 }
 
 // multiplied moving average
 func mma(sensor string, value int) (avg float32) {
-        lenght := len(arduino_prev_exp_stat[sensor])
+	lenght := len(arduino_prev_exp_stat[sensor])
 	if lenght <= 1 {
-		if conf.Verbose { fmt.Printf("history is emtpy, returning %d\n",value)}
+		if conf.Verbose {
+			fmt.Printf("history is emtpy, returning %d\n", value)
+		}
 		avg = float32(value)
 		return avg
 	}
-        items := 0
-        total := 0
+	items := 0
+	total := 0
 
-        for i,v := range arduino_prev_exp_stat[sensor]{
-		if v == 0 { continue }
-                if i == lenght - 2{
-                        total = total + v * conf.Analysis.Mma_2st
-                        items = items + conf.Analysis.Mma_2st
-                }
-                if i == lenght -1 {
-                        total = total + v * conf.Analysis.Mma_1st
-                        items = items + conf.Analysis.Mma_1st
-                }
-                total = total + v
-                items = items + 1
-        }
-        avg = float32(total)/float32(items)
+	for i, v := range arduino_prev_exp_stat[sensor] {
+		if v == 0 {
+			continue
+		}
+		if i == lenght-2 {
+			total = total + v*conf.Analysis.Mma_2st
+			items = items + conf.Analysis.Mma_2st
+		}
+		if i == lenght-1 {
+			total = total + v*conf.Analysis.Mma_1st
+			items = items + conf.Analysis.Mma_1st
+		}
+		total = total + v
+		items = items + 1
+	}
+	avg = float32(total) / float32(items)
 	return avg
 }
 
 func dutycycle(sensor string) (up int) {
 	up = 0
 	num := arduino_linear_stat[sensor]
-	cache_count:= len(arduino_prev_linear_stat[sensor])
-	if cache_count < 2 { return up }
+	cache_count := len(arduino_prev_linear_stat[sensor])
+	if cache_count < 2 {
+		return up
+	}
 	prev := arduino_prev_linear_stat[sensor][cache_count-2]
-	if conf.Verbose { fmt.Printf("num %d, prev %d, raising: %v\n",num,prev,raising)}
-        if num >= prev {
-                up = 1
+	if conf.Verbose {
+		fmt.Printf("num %d, prev %d, raising: %v\n", num, prev, raising)
+	}
+	if num >= prev {
+		up = 1
 		raising = true
 	} else {
 		raising = false
 	}
 
-        if num == prev && raising {
-                up = 1
+	if num == prev && raising {
+		up = 1
 	}
-	if conf.Verbose { fmt.Printf("rampup status: %d, raising: %v\n",up,raising)}
+	if conf.Verbose {
+		fmt.Printf("rampup status: %d, raising: %v\n", up, raising)
+	}
 	return up
 }
 
@@ -123,5 +135,7 @@ func history_setup() {
 	for _, k := range conf.Sensors.Arduino_exp {
 		arduino_prev_exp_stat[k] = []int{0}
 	}
-	if conf.Verbose { fmt.Printf("reset history successfull\n")}
+	if conf.Verbose {
+		fmt.Printf("reset history successfull\n")
+	}
 }
