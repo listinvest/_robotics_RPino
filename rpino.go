@@ -151,7 +151,10 @@ func read_arduino() {
 				ref_value_mma := mma(s, output)
 				lower := float32(ref_value_mma) * (conf.Analysis.Lower_limit)
 				upper := float32(ref_value_mma) * (conf.Analysis.Upper_limit)
-				if float32(output) >= lower && float32(output) <= upper{
+				if output <= conf.Analysis.Lower_bound {
+					log.Printf("value  %s is under the lower bound (%d)\n", s, conf.Analysis.Lower_bound )
+					validated = output
+				} else if float32(output) >= lower && float32(output) <= upper {
 					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f - %f )\n", s, output, lower, ref_value_mma, upper)
 					validated = output
 				} else {
