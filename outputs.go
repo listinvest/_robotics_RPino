@@ -17,7 +17,7 @@ import (
 var (
 	gpio1 chan (string)
 	gpio2 chan (string)
-	inout chan (bool)
+	input chan (bool)
 	siren chan (bool)
 )
 
@@ -25,6 +25,7 @@ func init() {
 	gpio1 = make(chan string)
 	gpio2 = make(chan string)
 	siren = make(chan bool)
+	input = make(chan bool)
 
 	if err := rpio.Open(); err != nil {
 		log.Fatal(err)
@@ -79,7 +80,7 @@ func siren_mgr() {
 	if conf.Verbose {
 		log.Printf("Siren manager on\n")
 	}
-	if conf.Outputs["alarm"].PIN == nil {
+	if conf.Outputs["alarm"].PIN == 0 {
 		log.Fatal("Alarm configured but GPIO for the relay is not!")
 		os.Exit(1)
 	}

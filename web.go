@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -73,6 +74,9 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 	case "/api/view_data":
 		w.Write([]byte(view_data()))
 
+	case "/api/view_conf":
+		w.Write([]byte(view_conf()))
+
 	case "/api/help":
 		w.Write([]byte("Available APIs:\n/socket\n/arduino_reset\n/alarm_test\n/history_reset\n/view_data\n"))
 
@@ -104,6 +108,11 @@ func view_data() (reply string) {
 		reply = reply + "; cache used " + used + " times, MMA: " + strconv.FormatFloat(M, 'E', -1, 64) + "\n"
 	}
 
+	return reply
+}
+
+func view_conf() (reply string) {
+	reply = fmt.Sprintf("%q",conf.Sensors)
 	return reply
 }
 

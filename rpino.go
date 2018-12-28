@@ -212,15 +212,16 @@ func get_rpi_stat() {
 
 func prometheus_update() {
 	lock.Lock()
+	adjusted := 0 
 	for k, v := range arduino_linear_stat {
-		if conf.Sensors.Adj_T["value"] != nil and k == "T" {
-			adjusted := v + conf.Sensors.Adj_T["value"]
+		if conf.Sensors.Adj_T["value"] != 0 && k == "T" {
+			adjusted = v + conf.Sensors.Adj_T["value"]
 			SensorStat.WithLabelValues(k).Set(float64(adjusted))
-		} else if conf.Sensors.Adj_H["value"] != nil and k == "H" {
-			adjusted := v + conf.Sensors.Adj_H["value"]
+		} else if conf.Sensors.Adj_H["value"] != 0 && k == "H" {
+			adjusted = v + conf.Sensors.Adj_H["value"]
 			SensorStat.WithLabelValues(k).Set(float64(adjusted))
 		} else {
-			SensorStat.WithLabelValues(k).Set(float64(adjusted))
+			SensorStat.WithLabelValues(k).Set(float64(v))
 		}
 	}
 	for k, v := range arduino_exp_stat {
