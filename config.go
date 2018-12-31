@@ -49,6 +49,7 @@ type alarms struct {
 	Email_enabled bool
 	Siren_enabled bool
 	Presence      bool
+	Slack_token   string `toml:"token"`
 	Smtp          string `toml:"smtp"`
 	Mailbox       string `toml:"mailbox"`
 	Auth_user     string `toml:"auth_user"`

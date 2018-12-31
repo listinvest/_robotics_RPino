@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/stianeikeland/go-rpio"
+	"github.com/nlopes/slack"
 	"log"
 	"net"
 	"net/mail"
@@ -147,6 +148,9 @@ func alarm_mgr() {
 		if conf.Alarms.Presence {
 			siren <- true
 		}
+		if conf.Alarms.Slack_token != "none" {
+			slack_notify(actual_temp)
+		}
 	}
 }
 
@@ -254,5 +258,30 @@ func send_email(temp string) (sent bool) {
 		}
 		c.Quit()
 		return true
+	}
+}
+
+
+func slack_notify( temp int) {
+        api := slack.New(conf.Alarms.Slack_token)
+        attachment := slack.Attachment{
+                Pretext: "Alarm:",
+                Text:    " Low temperature: " + strconv.Itoa(temp),
+                // Uncomment the following part to send a field too
+                /*
+                        Fields: []slack.AttachmentField{
+                                slack.AttachmentField{
+                                        Title: "a",
+                                        Value: "no",
+                                },
+                        },
+                */
+        }
+
+        channelID, timestamp, err := api.PostMessage("greenhouse", slack.MsgOptionText("important", false), slack.MsgOptionAttachments(attachment))
+        if err != nil {
+                fmt.Printf("%s\n", err)
+        } else {
+       		fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
 	}
 }
