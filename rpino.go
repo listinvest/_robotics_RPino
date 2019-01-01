@@ -47,7 +47,6 @@ var (
 	arduino_out       chan (string) // replies from Arduino
 	start_time        time.Time
 	conf              *config
-	first_run	  bool = true
 )
 
 var lock = &sync.Mutex{}
@@ -103,7 +102,6 @@ func read_arduino() {
 				if float32(output) >= lower && float32(output) <= upper {
 					log.Printf("value for %s is %d, within the safe boundaries( %f - %d - %f )\n", s, output, lower, ref_value, upper)
 					validated = output
-					add_linear(s,output)
 				} else {
 					validated = last_linear(s)
 					log.Printf("value for %s is %d, which outside the safe boundaries( %f - %d - %f ), using cached value %d\n", s, output, lower,ref_value, upper,validated)
@@ -112,9 +110,9 @@ func read_arduino() {
 					if !use_cached {
 						log.Printf("Using real value\n")
 						validated = output
-						add_linear(s,output)
 					}
 				}
+				add_linear(s,output)
 			}
 		} else {
 			log.Printf("failed read, using cached value\n")
@@ -185,7 +183,6 @@ func read_arduino() {
 		lock.Unlock()
 		time.Sleep(time.Second * 2)
 	}
-	first_run = false
 	check := comm2_arduino("S")
 	lock.Lock()
 	arduino_linear_stat["check_error"] = 0

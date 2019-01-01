@@ -82,7 +82,7 @@ func siren_mgr() {
 		log.Printf("Siren manager on\n")
 	}
 	if conf.Outputs["alarm"].PIN == 0 {
-		log.Fatal("Alarm configured but GPIO for the relay is not!")
+		log.Fatal("Alarm configured but GPIO for the siren is not!")
 		os.Exit(1)
 	}
 	var pin rpio.Pin
@@ -132,7 +132,7 @@ func alarm_mgr() {
 		//human := arduino_linear_stat["U"]
 		lock.Unlock()
 		// temperature alarm
-		if actual_temp < conf.Alarms.Critical_temp {
+		if actual_temp > 0 && actual_temp < conf.Alarms.Critical_temp {
 			log.Printf("Alarm triggered %d < %d!!\n", actual_temp, conf.Alarms.Critical_temp)
 			if conf.Alarms.Email_enabled {
 				s := send_email(strconv.Itoa(actual_temp))
@@ -143,13 +143,13 @@ func alarm_mgr() {
 			if conf.Alarms.Siren_enabled {
 				siren <- true
 			}
+			if conf.Alarms.Slack_token != "none" {
+				slack_notify(actual_temp)
+			}
 		}
 		// presence alarm
 		if conf.Alarms.Presence {
 			siren <- true
-		}
-		if conf.Alarms.Slack_token != "none" {
-			slack_notify(actual_temp)
 		}
 	}
 }

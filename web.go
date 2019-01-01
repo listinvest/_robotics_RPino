@@ -112,7 +112,8 @@ func view_data() (reply string) {
 }
 
 func view_conf() (reply string) {
-	reply = fmt.Sprintf("%q",conf.Sensors)
+	reply = fmt.Sprintf("%q",conf.Sensors.Arduino_linear)
+	reply = reply + "\n" + fmt.Sprintf("%q",conf.Sensors.Arduino_exp)
 	return reply
 }
 
