@@ -29,6 +29,9 @@ func add_linear(sensor string, value int) {
 	if lenght >= conf.Analysis.Depth {
 		arduino_prev_linear_stat[sensor] = arduino_prev_linear_stat[sensor][1:]
 	}
+	if conf.Verbose {
+		fmt.Printf("historic data: %v\n",arduino_prev_linear_stat[sensor])
+	}
 
 }
 
@@ -53,7 +56,7 @@ func reference(sensor string, value int) (ref int) {
 	}
 	sort.Ints(arduino_prev_linear_stat[sensor])
 	ref = int(lenght * conf.Analysis.Percentile)
-	if verbose {
+	if conf.Verbose {
 		fmt.Printf("index %d, value: %d\n", ref, arduino_prev_linear_stat[sensor][ref])
 	}
 	ref = arduino_prev_linear_stat[sensor][ref]

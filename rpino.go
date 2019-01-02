@@ -82,7 +82,7 @@ func read_arduino() {
 		use_cached := true
                 if arduino_cache_stat[s] > conf.Analysis.Cache_limit {
                         // if we used the cached value X times, we will prohibit to use again, this will allow MMA to catch up
-                        log.Printf("used cache too much, not using this time\n")
+                        log.Printf("used cache too much for %s, not using this time\n",s)
                         use_cached = false
                         arduino_cache_stat[s] = 0
                 }
@@ -108,7 +108,7 @@ func read_arduino() {
 					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
 					arduino_cache_stat[s] = arduino_cache_stat[s] + 1
 					if !use_cached {
-						log.Printf("Using real value\n")
+						log.Printf("Using real value for %s\n",s)
 						validated = output
 					}
 				}
@@ -149,10 +149,7 @@ func read_arduino() {
 				ref_value_mma := mma(s, output)
 				lower := float32(ref_value_mma) * (conf.Analysis.Lower_limit)
 				upper := float32(ref_value_mma) * (conf.Analysis.Upper_limit)
-				if output <= conf.Analysis.Lower_bound {
-					log.Printf("value  %s is under the lower bound (%d)\n", s, conf.Analysis.Lower_bound )
-					validated = output
-				} else if float32(output) >= lower && float32(output) <= upper {
+				if float32(output) >= lower && float32(output) <= upper {
 					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f - %f )\n", s, output, lower, ref_value_mma, upper)
 					validated = output
 				} else {
