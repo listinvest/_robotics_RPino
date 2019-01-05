@@ -285,6 +285,7 @@ func main() {
 			read_arduino()
 			time.Sleep(time.Second)
 			prometheus_update()
+			internal_cron()
 			os.Stderr.WriteString(t.String())
 			if conf.Inputs["bmp180"].PIN != 0 { bmp180() }
 		}
@@ -295,7 +296,6 @@ func main() {
 	go alarm_mgr()
 	go siren_mgr()
 	go start_inputs()
-	get_time()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)

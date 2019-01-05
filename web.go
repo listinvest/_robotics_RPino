@@ -51,13 +51,6 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(reply))
 			}
 		}
-		socket2, ok := r.URL.Query()["s2"]
-		if ok {
-			if socket2[0] != "" {
-				reply := command_socket(socket2[0])
-				w.Write([]byte(reply))
-			}
-		}
 
 	case "/api/arduino_reset":
 		comm2_arduino("X")
