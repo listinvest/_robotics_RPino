@@ -15,8 +15,10 @@ func start_inputs() {
 		log.Printf("No GPIO to monitor")
 	}
 	for sensor, detail := range conf.Inputs {
-		log.Printf("Starting to monitor sensor: %s on pin %d", sensor, detail.PIN)
-		go gpio_watch(sensor, detail.PIN)
+		if detail.PIN != 0 {
+			log.Printf("Starting to monitor sensor: %s on pin %d", sensor, detail.PIN)
+			go gpio_watch(sensor, detail.PIN)
+		}
 	}
 }
 
@@ -39,7 +41,7 @@ func gpio_watch(sensor string, Spin int) {
 		lock.Unlock()
 		if res == 1 {
 			input <- true
-		}		
+		}
 	}
 }
 
@@ -58,9 +60,9 @@ func bmp180() {
         // Read temperature in celsius degree
         t, err := sensor.ReadTemperatureC(bsbmp.ACCURACY_STANDARD)
         if err != nil {
-        	log.Println(err)
+		log.Println(err)
         }
-        if conf.Verbose { 
+        if conf.Verbose {
 		log.Printf("Temperature = %f*C", t)
         }
 	// Read atmospheric pressure in millibar
@@ -68,9 +70,9 @@ func bmp180() {
         if err != nil {
                 log.Println(err)
         }
-        if conf.Verbose { 
-        	log.Printf("Pressure = %f millibar", p/100 )
-      	}
+        if conf.Verbose {
+		log.Printf("Pressure = %f millibar", p/100 )
+	}
 	lock.Lock()
 	arduino_linear_stat["bmp180_T"] = int(t)
 	arduino_linear_stat["bmp180_P"] = int(p/100)

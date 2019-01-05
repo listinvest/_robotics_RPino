@@ -267,7 +267,7 @@ func main() {
 			log.Printf("Siren on pin %d for low temperature set on %d", conf.Outputs["alarm"].PIN, conf.Alarms.Critical_temp)
 		}
 		if conf.Alarms.Email_enabled {
-			log.Printf("Email notification is for  %s ",conf.Alarms.Mailbox)
+			log.Printf("Email notification is for: %s ",conf.Alarms.Mailbox)
 		}
 		log.Printf("Adjustments: H %d, T %d ",conf.Sensors.Adj_H["value"], conf.Sensors.Adj_T["value"])
 		//for k,v := range conf.Sensors {
@@ -296,6 +296,7 @@ func main() {
 	go alarm_mgr()
 	go siren_mgr()
 	go start_inputs()
+	go get_time()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)

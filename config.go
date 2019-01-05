@@ -12,10 +12,15 @@ type config struct {
 	Time_server  string    `toml:"time_server"`
 	Inputs   map[string]rpigpio
 	Outputs  map[string]rpigpio
+	Lighting  map[string]hours
 	Alarms   alarms      `toml:"alarms"`
 	Analysis analysis    `toml:"data_analysis"`
 	Speech   speech      `toml:"speech"`
 	Serial   serial_conf `toml:"serial"`
+}
+
+type hours struct {
+	Hour int
 }
 
 type rpigpio struct {

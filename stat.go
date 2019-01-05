@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"sort"
 )
 
@@ -30,7 +30,7 @@ func add_linear(sensor string, value int) {
 		arduino_prev_linear_stat[sensor] = arduino_prev_linear_stat[sensor][1:]
 	}
 	if conf.Verbose {
-		fmt.Printf("historic data: %v\n",arduino_prev_linear_stat[sensor])
+		log.Printf("historic data: %v\n",arduino_prev_linear_stat[sensor])
 	}
 
 }
@@ -49,7 +49,7 @@ func reference(sensor string, value int) (ref int) {
 	lenght := float32(len(arduino_prev_linear_stat[sensor]))
 	if lenght == 1 {
 		if conf.Verbose {
-			fmt.Printf("history is emtpy, returning %d\n", value)
+			log.Printf("history is emtpy, returning %d\n", value)
 		}
 		ref = value
 		return ref
@@ -57,7 +57,7 @@ func reference(sensor string, value int) (ref int) {
 	sort.Ints(arduino_prev_linear_stat[sensor])
 	ref = int(lenght * conf.Analysis.Percentile)
 	if conf.Verbose {
-		fmt.Printf("index %d, value: %d\n", ref, arduino_prev_linear_stat[sensor][ref])
+		log.Printf("index %d, value: %d\n", ref, arduino_prev_linear_stat[sensor][ref])
 	}
 	ref = arduino_prev_linear_stat[sensor][ref]
 	return ref
@@ -68,7 +68,7 @@ func mma(sensor string, value int) (avg float32) {
 	lenght := len(arduino_prev_exp_stat[sensor])
 	if lenght <= 1 {
 		if conf.Verbose {
-			fmt.Printf("history is emtpy, returning %d\n", value)
+			log.Printf("history is emtpy, returning %d\n", value)
 		}
 		avg = float32(value)
 		return avg
@@ -104,7 +104,7 @@ func dutycycle(sensor string) (up int) {
 	}
 	prev := arduino_prev_linear_stat[sensor][cache_count-2]
 	if conf.Verbose {
-		fmt.Printf("num %d, prev %d, raising: %v\n", num, prev, raising)
+		log.Printf("num %d, prev %d, raising: %v\n", num, prev, raising)
 	}
 	if num >= prev {
 		up = 1
@@ -115,9 +115,6 @@ func dutycycle(sensor string) (up int) {
 
 	if num == prev && raising {
 		up = 1
-	}
-	if conf.Verbose {
-		fmt.Printf("rampup status: %d, raising: %v\n", up, raising)
 	}
 	return up
 }
@@ -139,6 +136,6 @@ func history_setup() {
 		arduino_prev_exp_stat[k] = []int{0}
 	}
 	if conf.Verbose {
-		fmt.Printf("reset history successfull\n")
+		log.Printf("reset history successfull\n")
 	}
 }
