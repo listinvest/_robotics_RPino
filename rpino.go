@@ -294,6 +294,7 @@ func main() {
 	go alarm_mgr()
 	go siren_mgr()
 	go start_inputs()
+	get_time()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)

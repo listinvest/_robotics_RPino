@@ -8,7 +8,8 @@ import (
 type config struct {
 	Listen   string  `toml:"listen"`
 	Sensors  sensors `toml:"sensors"`
-	Verbose  bool    `toml:"verbose"`
+	Verbose  bool   `toml:"verbose"`
+	Time_server  string    `toml:"time_server"`
 	Inputs   map[string]rpigpio
 	Outputs  map[string]rpigpio
 	Alarms   alarms      `toml:"alarms"`
