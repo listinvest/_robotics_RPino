@@ -286,6 +286,7 @@ func main() {
 			time.Sleep(time.Second)
 			prometheus_update()
 			os.Stderr.WriteString(t.String())
+			if conf.Inputs["bmp180"].PIN != 0 { bmp180() }
 		}
 	}()
 	go send_gpio1(gpio1)

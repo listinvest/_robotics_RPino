@@ -168,6 +168,10 @@ func command_socket(socket string) (reply string) {
 }
 
 func send_gpio1(gpio1 <-chan string) {
+	if conf.Outputs["socket1"].PIN == 0 {
+		log.Println("no GPIO1 configured")
+		return
+	}
 	pin := rpio.Pin(conf.Outputs["socket1"].PIN)
 	pin.Output()
 	for {
@@ -183,6 +187,10 @@ func send_gpio1(gpio1 <-chan string) {
 }
 
 func send_gpio2(gpio2 <-chan string) {
+	if conf.Outputs["socket2"].PIN == 0 {
+		log.Println("no GPIO2 configured")
+		return
+	}
 	pin := rpio.Pin(conf.Outputs["socket2"].PIN)
 	pin.Output()
 	for {

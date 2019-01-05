@@ -4,8 +4,8 @@ import (
 	"github.com/stianeikeland/go-rpio"
 	"log"
 	"time"
-	//"github.com/d2r2/go-bsbmp"
-	//"github.com/d2r2/go-i2c"
+	"github.com/d2r2/go-bsbmp"
+	"github.com/d2r2/go-i2c"
 )
 
 //var lock = &sync.Mutex{}
@@ -39,6 +39,40 @@ func gpio_watch(sensor string, Spin int) {
 		lock.Unlock()
 		if res == 1 {
 			input <- true
-		}
+		}		
 	}
+}
+
+
+func bmp180() {
+        // Use i2cdetect utility to find device address over the i2c-bus
+        i2c, err := i2c.NewI2C(0x77, 1)
+        if err != nil {
+                log.Println(err)
+        }
+        defer i2c.Close()
+        sensor, err := bsbmp.NewBMP(bsbmp.BMP180, i2c)
+        if err != nil {
+                log.Println(err)
+        }
+        // Read temperature in celsius degree
+        t, err := sensor.ReadTemperatureC(bsbmp.ACCURACY_STANDARD)
+        if err != nil {
+        	log.Println(err)
+        }
+        if conf.Verbose { 
+		log.Printf("Temperature = %f*C", t)
+        }
+	// Read atmospheric pressure in millibar
+        p, err := sensor.ReadPressurePa(bsbmp.ACCURACY_STANDARD)
+        if err != nil {
+                log.Println(err)
+        }
+        if conf.Verbose { 
+        	log.Printf("Pressure = %f millibar", p/100 )
+      	}
+	lock.Lock()
+	arduino_linear_stat["bmp180_T"] = int(t)
+	arduino_linear_stat["bmp180_P"] = int(p/100)
+	lock.Unlock()
 }
