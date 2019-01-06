@@ -26,7 +26,7 @@ func get_time() {
 			remote_time := response.Time
 			actual_hour,_,_ = remote_time.Clock()
 		} else {
-			log.Println("Error NTP: %s  !", errr)
+			log.Printf("Error NTP: %s  !", errr)
 			now := time.Now()
 			actual_hour,_,_ = now.Clock()
 			lock.Lock()
@@ -41,6 +41,7 @@ func get_time() {
 }
 
 func internal_cron() {
+	if ( conf.Lighting["morning_start"].Hour == 0 && conf.Lighting["morning_end"].Hour == 0 && conf.Lighting["evening_start"].Hour ==0 &&  conf.Lighting["evening_end"].Hour ==0 )  { return }
 	Tlock.Lock()
 	now := hour
 	Tlock.Unlock()

@@ -47,7 +47,8 @@ func gpio_watch(sensor string, Spin int) {
 
 
 func bmp180() {
-        // Use i2cdetect utility to find device address over the i2c-bus
+        if conf.Verbose { log.Println("Reading BMP") }
+        // Use 'i2cdetect -y 1' utility to find the device address 
         i2c, err := i2c.NewI2C(0x77, 1)
         if err != nil {
                 log.Println(err)
@@ -78,3 +79,4 @@ func bmp180() {
 	arduino_linear_stat["bmp180_P"] = int(p/100)
 	lock.Unlock()
 }
+

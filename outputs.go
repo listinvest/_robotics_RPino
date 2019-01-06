@@ -62,7 +62,7 @@ func input_presence() {
 			if conf.Verbose {
 				log.Printf("Input detected\n")
 			}
-			// do something useful
+			// do something useful, speak ?
 		}
 	}
 }

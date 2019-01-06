@@ -8,8 +8,6 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -70,125 +68,6 @@ func init() {
 	serial_stat["failed_interval"] = 1
 }
 
-func read_arduino() {
-	if conf.Verbose {
-		log.Println("Arduino stats")
-	}
-	reply := ""
-	for _, s := range conf.Sensors.Arduino_linear {
-		log.Printf("sent instruction for: %s", s)
-		validated := 0
-		use_cached := true
-                if arduino_cache_stat[s] > conf.Analysis.Cache_limit {
-                        // if we used the cached value X times, we will prohibit to use again, this will allow MMA to catch up
-                        log.Printf("used cache too much for %s, not using this time\n",s)
-                        use_cached = false
-                        arduino_cache_stat[s] = 0
-                }
-		reply = comm2_arduino(s)
-		if reply != "null" {
-			output, err := strconv.Atoi(reply)
-			if err != nil {
-				log.Printf("Failed conversion: %s\n", err)
-				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
-				validated = last_linear(s)
-				log.Printf("failed read, using cached value\n")
-				arduino_cache_stat[s] = arduino_cache_stat[s] + 1
-			} else {
-				ref_value := reference(s,output)
-				lower := float32(ref_value) * conf.Analysis.Lower_limit
-				upper := float32(ref_value) * conf.Analysis.Upper_limit
-				if float32(output) >= lower && float32(output) <= upper {
-					log.Printf("value for %s is %d, within the safe boundaries( %f - %d - %f )\n", s, output, lower, ref_value, upper)
-					validated = output
-				} else {
-					validated = last_linear(s)
-					log.Printf("value for %s is %d, which outside the safe boundaries( %f - %d - %f ), using cached value %d\n", s, output, lower,ref_value, upper,validated)
-					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
-					arduino_cache_stat[s] = arduino_cache_stat[s] + 1
-					if !use_cached {
-						log.Printf("Using real value for %s\n",s)
-						validated = output
-					}
-				}
-				add_linear(s,output)
-			}
-		} else {
-			log.Printf("failed read, using cached value\n")
-			validated = last_linear(s)
-			arduino_cache_stat[s] = arduino_cache_stat[s] + 1
-		}
-		reply = ""
-		lock.Lock()
-		arduino_linear_stat[s] = validated
-		lock.Unlock()
-		time.Sleep(time.Second * 2)
-	}
-	time.Sleep(time.Second * 2)
-	for _, s := range conf.Sensors.Arduino_exp {
-		log.Printf("sent instruction for: %s", s)
-		validated := 0
-		use_cached := true
-		if arduino_cache_stat[s] > conf.Analysis.Cache_limit {
-			// if we used the cached value X times, we will prohibit to use again, this will allow MMA to catch up
-			log.Printf("used cache too much, not using this time\n")
-			use_cached = false
-			arduino_cache_stat[s] = 0
-		}
-		reply = comm2_arduino(s)
-		if reply != "null" {
-			output, err := strconv.Atoi(reply)
-			if err != nil {
-				log.Printf("Failed conversion: %s\n", err)
-				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
-				validated = last_exp(s)
-				arduino_cache_stat[s] = arduino_cache_stat[s] + 1
-				log.Printf("failed read, using cached value\n")
-			} else {
-				ref_value_mma := mma(s, output)
-				lower := float32(ref_value_mma) * (conf.Analysis.Lower_limit)
-				upper := float32(ref_value_mma) * (conf.Analysis.Upper_limit)
-				if float32(output) >= lower && float32(output) <= upper {
-					log.Printf("EXP: value for %s is %d, within the safe boundaries( %f - %f - %f )\n", s, output, lower, ref_value_mma, upper)
-					validated = output
-				} else {
-					log.Printf("EXP: value for %s is %d, which outside the safe boundaries( %f - %f - %f )\n", s, output, lower, ref_value_mma, upper)
-					serial_stat["failed_interval"] = serial_stat["failed_interval"] + 1
-					validated = last_exp(s) //will use prev value
-					arduino_cache_stat[s] = arduino_cache_stat[s] + 1
-					if !use_cached {
-						log.Printf("Using real value\n")
-						validated = output
-					}
-				}
-				// add every value we recieve to the history
-				add_exp(s,validated)
-			}
-		} else {
-			log.Printf("failed read, using cached value\n")
-			validated = last_exp(s)
-			arduino_cache_stat[s] = arduino_cache_stat[s] + 1
-		}
-
-		reply = ""
-		lock.Lock()
-		if validated > 0 {
-			inverted := int(1/float32(validated)*10000)
-			arduino_exp_stat[s] = inverted
-		}
-		lock.Unlock()
-		time.Sleep(time.Second * 2)
-	}
-	check := comm2_arduino("S")
-	lock.Lock()
-	arduino_linear_stat["check_error"] = 0
-	if strings.Index(check, "ok") == -1 { // check if the reply is what we asked
-		log.Printf("Periodic check failed (%q)!\n", check)
-		arduino_linear_stat["check_error"] = 1
-	}
-	lock.Unlock()
-	flush_serial()
-}
 
 func get_rpi_stat() {
 	if conf.Verbose {
@@ -269,11 +148,6 @@ func main() {
 			log.Printf("Email notification is for: %s ",conf.Alarms.Mailbox)
 		}
 		log.Printf("Adjustments: H %d, T %d ",conf.Sensors.Adj_H["value"], conf.Sensors.Adj_T["value"])
-		//for k,v := range conf.Sensors {
-		//	if strings.Contains(k,"Adj") {
-		//		log.Printf("k %s, v %d ",k, conf.Sensors.k["value"])
-		//	}
-		//}
 	}
 	flush_serial()
 	Mticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
@@ -282,10 +156,10 @@ func main() {
 		for _ = range Mticker.C {
 			get_rpi_stat()
 			read_arduino()
+			if conf.Sensors.Bmp { bmp180() }
 			time.Sleep(time.Second)
 			prometheus_update()
 			internal_cron()
-			if conf.Inputs["bmp180"].PIN != 0 { bmp180() }
 		}
 	}()
 	go send_gpio1(gpio1)
