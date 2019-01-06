@@ -119,14 +119,15 @@ func siren_mgr() {
 func alarm_mgr() {
 	time.Sleep(time.Minute)
 	//set a x seconds ticker
-	ticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
+	Aticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
+	defer Aticker.Stop()
 	// check if presence and U sensor are both setup (it has been just initialized)
 	if conf.Alarms.Presence && arduino_linear_stat["U"]==0  {
 		log.Fatal("Alarm configured but GPIO for the relay is not!")
 		os.Exit(1)
 	}
 
-	for _ = range ticker.C {
+	for _ = range Aticker.C {
 		lock.Lock()
 		actual_temp := arduino_linear_stat["T"]
 		//human := arduino_linear_stat["U"]

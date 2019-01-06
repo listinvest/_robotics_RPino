@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -277,16 +276,15 @@ func main() {
 		//}
 	}
 	flush_serial()
-	//set a x seconds ticker
-	ticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
+	Mticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
+	defer Mticker.Stop()
 	go func() {
-		for t := range ticker.C {
+		for _ = range Mticker.C {
 			get_rpi_stat()
 			read_arduino()
 			time.Sleep(time.Second)
 			prometheus_update()
 			internal_cron()
-			os.Stderr.WriteString(t.String())
 			if conf.Inputs["bmp180"].PIN != 0 { bmp180() }
 		}
 	}()

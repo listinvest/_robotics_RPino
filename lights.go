@@ -1,7 +1,6 @@
 package main
 
 import (
-    "fmt"
     "log"
     "sync"
      "time"
@@ -13,20 +12,31 @@ var Tlock = &sync.Mutex{}
 
 func get_time() {
 	if conf.Verbose { log.Printf("Get time from: %s\n", conf.Time_server) }
-
-	//set a x seconds ticker
-	ticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * 10)
-
-	for _ = range ticker.C {
-		response,errr := ntp.Query(conf.Time_server)
+	actual_hour := 0
+	options := ntp.QueryOptions{ Timeout: 10*time.Second, TTL: 5 }
+	response,_ := ntp.QueryWithOptions(conf.Time_server, options)
+	remote_time := response.Time
+	hour,_,_ = remote_time.Clock()
+	Lticker := time.NewTicker(time.Minute)
+	defer Lticker.Stop()
+	for _ = range Lticker.C {
+		options := ntp.QueryOptions{ Timeout: 10*time.Second, TTL: 5 }
+		response,errr := ntp.QueryWithOptions(conf.Time_server, options)
 		if errr == nil {
-			time := time.Now().Add(response.ClockOffset)
-			Tlock.Lock()
-			hour = time.Hour()
-			Tlock.Unlock()
+			remote_time := response.Time
+			actual_hour,_,_ = remote_time.Clock()
 		} else {
-			fmt.Printf("Error NTP: %s  ! \n", errr)
+			log.Println("Error NTP: %s  !", errr)
+			now := time.Now()
+			actual_hour,_,_ = now.Clock()
+			lock.Lock()
+			rpi_stat["ntp_error"] = 1
+			lock.Unlock()
 		}
+		if conf.Verbose { log.Printf("CLOCK h: %d ", actual_hour) }
+		Tlock.Lock()
+		hour = actual_hour
+		Tlock.Unlock()
 	}
 }
 
@@ -34,11 +44,17 @@ func internal_cron() {
 	Tlock.Lock()
 	now := hour
 	Tlock.Unlock()
+	on := 0
 	if ( conf.Lighting["morning_start"].Hour < now && now < conf.Lighting["morning_end"].Hour)  || ( conf.Lighting["evening_start"].Hour < now && now < conf.Lighting["evening_end"].Hour)  {
-		log.Println("Lights on")
+		if conf.Verbose { log.Printf("Lights on (h:%d)", now) }
 		gpio2 <- "on"
+		on = 1
 	} else {
+		if conf.Verbose { log.Printf("Lights off (h:%d)", now) }
 		gpio2 <- "off"
 	}
+	lock.Lock()
+	rpi_stat["light"] = on
+	lock.Unlock()
 
 }
