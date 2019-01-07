@@ -61,11 +61,6 @@ func init() {
 		log.Fatal(err)
 	}
 	rpi_stat = make(map[string]int)
-	serial_stat = make(map[string]int)
-	serial_stat["good_read"] = 1
-	serial_stat["failed_read"] = 1
-	serial_stat["failed_atoi"] = 1
-	serial_stat["failed_interval"] = 1
 }
 
 
@@ -84,8 +79,10 @@ func get_rpi_stat() {
 
 func prometheus_update() {
 	lock.Lock()
-	adjusted := 0 
+	adjusted := 0
+	temp := false
 	for k, v := range arduino_linear_stat {
+		if k == "T" { temp = true}
 		if conf.Sensors.Adj_T["value"] != 0 && k == "T" {
 			adjusted = v + conf.Sensors.Adj_T["value"]
 			SensorStat.WithLabelValues(k).Set(float64(adjusted))
@@ -99,9 +96,10 @@ func prometheus_update() {
 	for k, v := range arduino_exp_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
 	}
-	dutyc := dutycycle("T")
-	SensorStat.WithLabelValues("dutycycle_T").Set(float64(dutyc))
-
+	if temp {
+		dutyc := dutycycle("T")
+		SensorStat.WithLabelValues("dutycycle_T").Set(float64(dutyc))
+	}
 	for k, v := range rpi_stat {
 		RPIStat.WithLabelValues(k).Set(float64(v))
 	}
@@ -127,15 +125,7 @@ func main() {
 		conf.Verbose = true
 	}
 
-	// initialize maps
-	n := len(conf.Sensors.Arduino_linear)
-	arduino_linear_stat = make(map[string]int, n)
-	arduino_prev_linear_stat = make(map[string][]int, n)
-	n = len(conf.Sensors.Arduino_exp)
-	arduino_exp_stat = make(map[string]int, n)
-	arduino_cache_stat = make(map[string]int, n)
-	arduino_prev_exp_stat = make(map[string][]int, n)
-	history_setup()
+	initialize_arduino()
 
 	log.SetPrefix("[RPino] ")
 	log.Printf("Prometheus metrics will be exposed on %s\n", conf.Listen)

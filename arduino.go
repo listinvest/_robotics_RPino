@@ -9,6 +9,23 @@ import (
 	"time"
 )
 
+func initialize_arduino() {
+	if conf.Serial.Tty == "none" { return }
+	// initialize maps
+	n := len(conf.Sensors.Arduino_linear)
+	arduino_linear_stat = make(map[string]int, n)
+	arduino_prev_linear_stat = make(map[string][]int, n)
+	n = len(conf.Sensors.Arduino_exp)
+	arduino_exp_stat = make(map[string]int, n)
+	arduino_cache_stat = make(map[string]int, n)
+	arduino_prev_exp_stat = make(map[string][]int, n)
+	history_setup()
+	serial_stat = make(map[string]int)
+	serial_stat["good_read"] = 1
+	serial_stat["failed_read"] = 1
+	serial_stat["failed_atoi"] = 1
+	serial_stat["failed_interval"] = 1
+}
 
 func read_arduino() {
 	if conf.Serial.Tty == "none" { return }

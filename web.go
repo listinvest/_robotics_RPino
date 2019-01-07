@@ -112,11 +112,12 @@ func view_conf() (reply string) {
 }
 
 func mainpage(w http.ResponseWriter, r *http.Request) {
+	hostname, _ :=  os.Hostname()
 	w.Write([]byte(`
          <html>
          <head><title>RPino</title></head>
          <body>
-         <h1>Rpino Web Interface</h1>
+         <h1>Rpino Web Interface running on ` + hostname + `</h1>
          <h2>parameters '` + strings.Join(os.Args, " ") + `'</h2>
          <p><a href='/metrics'><b>Prometheus Metrics</b></a></p>
          <p><a href='/json'><b>JSON Metrics</b></a></p>
