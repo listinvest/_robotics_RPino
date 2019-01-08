@@ -40,7 +40,7 @@ func get_time() {
 	}
 }
 
-func internal_cron() {
+func light_mgr() {
 	if ( conf.Lighting["morning_start"].Hour == 0 && conf.Lighting["morning_end"].Hour == 0 && conf.Lighting["evening_start"].Hour ==0 &&  conf.Lighting["evening_end"].Hour ==0 )  { return }
 	Tlock.Lock()
 	now := hour
@@ -48,14 +48,25 @@ func internal_cron() {
 	on := 0
 	if ( conf.Lighting["morning_start"].Hour < now && now < conf.Lighting["morning_end"].Hour)  || ( conf.Lighting["evening_start"].Hour < now && now < conf.Lighting["evening_end"].Hour)  {
 		if conf.Verbose { log.Printf("Lights on (h:%d)", now) }
-		gpio2 <- "on"
 		on = 1
 	} else {
 		if conf.Verbose { log.Printf("Lights off (h:%d)", now) }
-		gpio2 <- "off"
 	}
+	lock.Lock()
+	red := arduino_exp_stats["R"]
+	lock.Unlock()
+	if red < conf.Lighting["minimum_red"].Hour {
+		log.Printf("Red light component is lower than threshold - %d", conf.Lighting["minimum_red"].Hour)
+		on = 1
+	}
+
 	lock.Lock()
 	rpi_stat["light"] = on
 	lock.Unlock()
-
+	if on == 1 {
+		gpio2 <- "on"
+	} else {
+		gpio2 <- "off"
+	}
 }
+

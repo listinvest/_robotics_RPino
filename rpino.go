@@ -149,7 +149,7 @@ func main() {
 			if conf.Sensors.Bmp { bmp180() }
 			time.Sleep(time.Second)
 			prometheus_update()
-			internal_cron()
+			light_mgr()
 		}
 	}()
 	go send_gpio1(gpio1)
