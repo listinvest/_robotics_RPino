@@ -12,7 +12,7 @@ type config struct {
 	Time_server  string    `toml:"time_server"`
 	Inputs   map[string]rpigpio
 	Outputs  map[string]rpigpio
-	Lighting  map[string]hours
+	Lighting light	`toml:"lighting"`
 	Alarms   alarms      `toml:"alarms"`
 	Analysis analysis    `toml:"data_analysis"`
 	Speech   speech      `toml:"speech"`
@@ -37,6 +37,7 @@ type sensors struct {
 	Poll_interval  int      `toml:"poll_interval"`
 	Adj_H          map[string]int
 	Adj_T          map[string]int
+	Bmp	       bool	`toml:"bmp"`
 }
 
 type speech struct {
@@ -71,6 +72,12 @@ type analysis struct {
 	Lower_limit float32 `toml:"lower_limit"`
 	Mma_1st     int     `toml:"mma_1st"`
 	Mma_2st     int     `toml:"mma_2st"`
+}
+
+type light struct {
+	Red int `toml:"red_threshold"`
+	Start int `toml:"start_hour"`
+	End int `toml:"end_hour"`
 }
 
 func loadConfig(path string) *config {

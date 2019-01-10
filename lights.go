@@ -26,7 +26,7 @@ func get_time() {
 			remote_time := response.Time
 			actual_hour,_,_ = remote_time.Clock()
 		} else {
-			log.Println("Error NTP: %s  !", errr)
+			log.Printf("Error NTP: %s  !", errr)
 			now := time.Now()
 			actual_hour,_,_ = now.Clock()
 			lock.Lock()
@@ -40,21 +40,29 @@ func get_time() {
 	}
 }
 
-func internal_cron() {
+func light_mgr() {
 	Tlock.Lock()
 	now := hour
 	Tlock.Unlock()
+	lock.Lock()
+	red := arduino_exp_stat["R"]
+	lock.Unlock()
 	on := 0
-	if ( conf.Lighting["morning_start"].Hour < now && now < conf.Lighting["morning_end"].Hour)  || ( conf.Lighting["evening_start"].Hour < now && now < conf.Lighting["evening_end"].Hour)  {
+	if conf.Lighting.Start < now && now < conf.Lighting.End  && red < conf.Lighting.Red {
+		log.Printf("Red light component is %d, lower than threshold %d",red, conf.Lighting.Red)
 		if conf.Verbose { log.Printf("Lights on (h:%d)", now) }
-		gpio2 <- "on"
 		on = 1
 	} else {
 		if conf.Verbose { log.Printf("Lights off (h:%d)", now) }
-		gpio2 <- "off"
 	}
+
 	lock.Lock()
 	rpi_stat["light"] = on
 	lock.Unlock()
-
+	if on == 1 {
+		gpio2 <- "on"
+	} else {
+		gpio2 <- "off"
+	}
 }
+

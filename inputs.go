@@ -31,13 +31,14 @@ func gpio_watch(sensor string, Spin int) {
 	pin.Input()
 	defer rpio.Close()
 	//set a x seconds ticker
-	ticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second / 2)
+	Gticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second / 2)
+	defer Gticker.Stop()
 
-	for _ = range ticker.C {
+	for _ = range Gticker.C {
 		res := pin.Read()
 		//log.Printf("detected: %d",res)
 		lock.Lock()
-		arduino_linear_stat[sensor] = int(res)
+		rpi_stat[sensor] = int(res)
 		lock.Unlock()
 		if res == 1 {
 			input <- true
@@ -47,7 +48,8 @@ func gpio_watch(sensor string, Spin int) {
 
 
 func bmp180() {
-        // Use i2cdetect utility to find device address over the i2c-bus
+        if conf.Verbose { log.Println("Reading BMP") }
+        // Use 'i2cdetect -y 1' utility to find the device address 
         i2c, err := i2c.NewI2C(0x77, 1)
         if err != nil {
                 log.Println(err)
@@ -74,7 +76,8 @@ func bmp180() {
 		log.Printf("Pressure = %f millibar", p/100 )
 	}
 	lock.Lock()
-	arduino_linear_stat["bmp180_T"] = int(t)
-	arduino_linear_stat["bmp180_P"] = int(p/100)
+	rpi_stat["bmp180_T"] = int(t)
+	rpi_stat["bmp180_P"] = int(p/100)
 	lock.Unlock()
 }
+
