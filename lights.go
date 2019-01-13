@@ -11,6 +11,10 @@ var hour int
 var Tlock = &sync.Mutex{}
 
 func get_time() {
+	if conf.Lighting.Red == 0 {
+		log.Println("No light management, no internal cron needed.")
+		return
+	}
 	if conf.Verbose { log.Printf("Get time from: %s\n", conf.Time_server) }
 	actual_hour := 0
 	options := ntp.QueryOptions{ Timeout: 10*time.Second, TTL: 5 }
@@ -47,6 +51,7 @@ func get_time() {
 }
 
 func light_mgr() {
+	if conf.Lighting.Red == 0 { return }
 	Tlock.Lock()
 	now := hour
 	Tlock.Unlock()
