@@ -121,7 +121,8 @@ func mainpage(w http.ResponseWriter, r *http.Request) {
          <h2>parameters '` + strings.Join(os.Args, " ") + `'</h2>
          <p><a href='/metrics'><b>Prometheus Metrics</b></a></p>
          <p><a href='/json'><b>JSON Metrics</b></a></p>
-         <p><a href='/api'><b>API endpoint</b></a></p>
+         <p><a href='/api/help'><b>API endpoint</b></a></p>
+         <p><a href='/debug/pprof/'><b>PProf endpoint</b></a></p>
          </body>
          </html>
          `))
