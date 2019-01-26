@@ -38,6 +38,7 @@ type sensors struct {
 	Adj_H          map[string]int
 	Adj_T          map[string]int
 	Bmp	       bool	`toml:"bmp"`
+	Dht	       bool	`toml:"dht"`
 }
 
 type speech struct {

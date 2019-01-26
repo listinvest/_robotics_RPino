@@ -147,6 +147,7 @@ func main() {
 			get_rpi_stat()
 			read_arduino()
 			if conf.Sensors.Bmp { bmp180() }
+			if conf.Sensors.Dht { dht11() }
 			time.Sleep(time.Second)
 			prometheus_update()
 			light_mgr()

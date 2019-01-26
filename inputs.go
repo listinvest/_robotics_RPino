@@ -6,6 +6,7 @@ import (
 	"time"
 	"github.com/d2r2/go-bsbmp"
 	"github.com/d2r2/go-i2c"
+	dht "github.com/d2r2/go-dht"
 )
 
 //var lock = &sync.Mutex{}
@@ -48,7 +49,7 @@ func gpio_watch(sensor string, Spin int) {
 
 
 func bmp180() {
-        if conf.Verbose { log.Println("Reading BMP") }
+        if conf.Verbose { log.Println("Reading BMP180") }
         // Use 'i2cdetect -y 1' utility to find the device address 
         i2c, err := i2c.NewI2C(0x77, 1)
         if err != nil {
@@ -78,6 +79,22 @@ func bmp180() {
 	lock.Lock()
 	rpi_stat["bmp180_T"] = int(t)
 	rpi_stat["bmp180_P"] = int(p/100)
+	lock.Unlock()
+}
+
+func dht11() {
+        if conf.Verbose { log.Println("Reading DHT11") }
+	temperature, humidity, _, err :=
+		dht.ReadDHTxxWithRetry(dht.DHT11, 14, false, 2)
+	if err != nil {
+		log.Println(err)
+	}
+        if conf.Verbose {
+		log.Printf("Temperature = %f*C, Humidity = %f%%", temperature, humidity)
+        }
+	lock.Lock()
+	rpi_stat["dht_T"] = int(temperature)
+	rpi_stat["dht_H"] = int(humidity)
 	lock.Unlock()
 }
 
