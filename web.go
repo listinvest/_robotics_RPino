@@ -85,7 +85,7 @@ func view_data() (reply string) {
 		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_linear_stat[sensor]) + ", prev: "
 		for _, v := range arduino_prev_linear_stat[sensor] {
 			reply = reply + strconv.Itoa(v) + ", "
-		reply = reply +  "\n "
+			reply = reply + "\n "
 		}
 	}
 	reply = reply + "\n\nExponential sensors:\n"
@@ -95,20 +95,20 @@ func view_data() (reply string) {
 		for _, v := range arduino_prev_exp_stat[sensor] {
 			reply = reply + strconv.Itoa(v) + ", "
 		}
-		reply = reply +  "\n "
+		reply = reply + "\n "
 	}
 
 	return reply
 }
 
 func view_conf() (reply string) {
-	reply = fmt.Sprintf("%q",conf.Sensors.Arduino_linear)
-	reply = reply + "\n" + fmt.Sprintf("%q",conf.Sensors.Arduino_exp)
+	reply = fmt.Sprintf("%q", conf.Sensors.Arduino_linear)
+	reply = reply + "\n" + fmt.Sprintf("%q", conf.Sensors.Arduino_exp)
 	return reply
 }
 
 func mainpage(w http.ResponseWriter, r *http.Request) {
-	hostname, _ :=  os.Hostname()
+	hostname, _ := os.Hostname()
 	w.Write([]byte(`
          <html>
          <head><title>RPino</title></head>

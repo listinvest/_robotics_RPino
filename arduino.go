@@ -10,7 +10,9 @@ import (
 )
 
 func initialize_arduino() {
-	if conf.Serial.Tty == "none" { return }
+	if conf.Serial.Tty == "none" {
+		return
+	}
 	// initialize maps
 	n := len(conf.Sensors.Arduino_linear)
 	arduino_linear_stat = make(map[string]int, n)
@@ -28,7 +30,9 @@ func initialize_arduino() {
 }
 
 func read_arduino() {
-	if conf.Serial.Tty == "none" { return }
+	if conf.Serial.Tty == "none" {
+		return
+	}
 	if conf.Verbose {
 		log.Println("Arduino stats")
 	}
@@ -44,9 +48,9 @@ func read_arduino() {
 				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
 				validated = last_linear(s)
 			} else {
-					validated = output
+				validated = output
 			}
-			add_linear(s,output)
+			add_linear(s, output)
 		} else {
 			log.Printf("failed read, using cached value\n")
 			validated = last_linear(s)
@@ -70,10 +74,10 @@ func read_arduino() {
 				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
 				validated = last_exp(s)
 			} else {
-					validated = output
+				validated = output
 			}
-		// add every value we recieve to the history
-		add_exp(s,validated)
+			// add every value we recieve to the history
+			add_exp(s, validated)
 		} else {
 			log.Printf("failed read, using cached value\n")
 			validated = last_exp(s)
@@ -83,7 +87,7 @@ func read_arduino() {
 		reply = ""
 		lock.Lock()
 		if validated > 0 {
-			inverted := int(1/float32(validated)*10000)
+			inverted := int(1 / float32(validated) * 10000)
 			arduino_exp_stat[s] = inverted
 		}
 		lock.Unlock()
@@ -101,7 +105,9 @@ func read_arduino() {
 }
 
 func comm2_arduino(sensor string) (output string) {
-	if conf.Serial.Tty == "none" { return }
+	if conf.Serial.Tty == "none" {
+		return
+	}
 	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
 	s, err := serial.OpenPort(c)
 	if err != nil {
@@ -151,7 +157,9 @@ func comm2_arduino(sensor string) (output string) {
 }
 
 func flush_serial() {
-	if conf.Serial.Tty == "none" { return }
+	if conf.Serial.Tty == "none" {
+		return
+	}
 	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
 	s, err := serial.OpenPort(c)
 	if err != nil {

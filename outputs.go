@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/stianeikeland/go-rpio"
 	"github.com/nlopes/slack"
+	"github.com/stianeikeland/go-rpio"
 	"log"
 	"net"
 	"net/mail"
@@ -122,7 +122,7 @@ func alarm_mgr() {
 	Aticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
 	defer Aticker.Stop()
 	// check if presence and U sensor are both setup (it has been just initialized)
-	if conf.Alarms.Presence && arduino_linear_stat["U"]==0  {
+	if conf.Alarms.Presence && arduino_linear_stat["U"] == 0 {
 		log.Fatal("Alarm configured but GPIO for the relay is not!")
 		os.Exit(1)
 	}
@@ -270,27 +270,26 @@ func send_email(temp string) (sent bool) {
 	}
 }
 
+func slack_notify(temp int) {
+	api := slack.New(conf.Alarms.Slack_token)
+	attachment := slack.Attachment{
+		Pretext: "Alarm:",
+		Text:    " Low temperature: " + strconv.Itoa(temp),
+		// Uncomment the following part to send a field too
+		/*
+		   Fields: []slack.AttachmentField{
+		           slack.AttachmentField{
+		                   Title: "a",
+		                   Value: "no",
+		           },
+		   },
+		*/
+	}
 
-func slack_notify( temp int) {
-        api := slack.New(conf.Alarms.Slack_token)
-        attachment := slack.Attachment{
-                Pretext: "Alarm:",
-                Text:    " Low temperature: " + strconv.Itoa(temp),
-                // Uncomment the following part to send a field too
-                /*
-                        Fields: []slack.AttachmentField{
-                                slack.AttachmentField{
-                                        Title: "a",
-                                        Value: "no",
-                                },
-                        },
-                */
-        }
-
-        channelID, timestamp, err := api.PostMessage("greenhouse", slack.MsgOptionText("important", false), slack.MsgOptionAttachments(attachment))
-        if err != nil {
-                fmt.Printf("%s\n", err)
-        } else {
-       		fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
+	channelID, timestamp, err := api.PostMessage("greenhouse", slack.MsgOptionText("important", false), slack.MsgOptionAttachments(attachment))
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	} else {
+		fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
 	}
 }

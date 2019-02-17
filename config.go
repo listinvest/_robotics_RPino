@@ -6,17 +6,17 @@ import (
 )
 
 type config struct {
-	Listen   string  `toml:"listen"`
-	Sensors  sensors `toml:"sensors"`
-	Verbose  bool   `toml:"verbose"`
-	Time_server  string    `toml:"time_server"`
-	Inputs   map[string]rpigpio
-	Outputs  map[string]rpigpio
-	Lighting light	`toml:"lighting"`
-	Alarms   alarms      `toml:"alarms"`
-	Analysis analysis    `toml:"data_analysis"`
-	Speech   speech      `toml:"speech"`
-	Serial   serial_conf `toml:"serial"`
+	Listen      string  `toml:"listen"`
+	Sensors     sensors `toml:"sensors"`
+	Verbose     bool    `toml:"verbose"`
+	Time_server string  `toml:"time_server"`
+	Inputs      map[string]rpigpio
+	Outputs     map[string]rpigpio
+	Lighting    light       `toml:"lighting"`
+	Alarms      alarms      `toml:"alarms"`
+	Analysis    analysis    `toml:"data_analysis"`
+	Speech      speech      `toml:"speech"`
+	Serial      serial_conf `toml:"serial"`
 }
 
 type hours struct {
@@ -37,8 +37,8 @@ type sensors struct {
 	Poll_interval  int      `toml:"poll_interval"`
 	Adj_H          map[string]int
 	Adj_T          map[string]int
-	Bmp	       int	`toml:"bmp"`
-	Dht	       int	`toml:"dht"`
+	Bmp            int `toml:"bmp"`
+	Dht            int `toml:"dht"`
 }
 
 type speech struct {
@@ -71,9 +71,9 @@ type analysis struct {
 }
 
 type light struct {
-	Red int `toml:"red_threshold"`
+	Red   int `toml:"red_threshold"`
 	Start int `toml:"start_hour"`
-	End int `toml:"end_hour"`
+	End   int `toml:"end_hour"`
 }
 
 func loadConfig(path string) *config {

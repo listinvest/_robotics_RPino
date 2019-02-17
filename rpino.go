@@ -31,19 +31,19 @@ var SerialStat = prometheus.NewCounterVec(prometheus.CounterOpts{
 	[]string{"type"})
 
 var (
-	verbose           bool
-	raising           bool
+	verbose                  bool
+	raising                  bool
 	arduino_prev_linear_stat map[string][]int
-	arduino_prev_exp_stat map[string][]int
+	arduino_prev_exp_stat    map[string][]int
 	arduino_linear_stat      map[string]int
-	arduino_exp_stat      map[string]int
-	arduino_cache_stat      map[string]int
-	serial_stat	  map[string]int
-	rpi_stat          map[string]int
-	arduino_in        chan (string) // questions to  Arduino
-	arduino_out       chan (string) // replies from Arduino
-	start_time        time.Time
-	conf              *config
+	arduino_exp_stat         map[string]int
+	arduino_cache_stat       map[string]int
+	serial_stat              map[string]int
+	rpi_stat                 map[string]int
+	arduino_in               chan (string) // questions to  Arduino
+	arduino_out              chan (string) // replies from Arduino
+	start_time               time.Time
+	conf                     *config
 )
 
 var lock = &sync.Mutex{}
@@ -63,7 +63,6 @@ func init() {
 	rpi_stat = make(map[string]int)
 }
 
-
 func get_rpi_stat() {
 	if conf.Verbose {
 		log.Println("RPi stats")
@@ -82,7 +81,9 @@ func prometheus_update() {
 	adjusted := 0
 	temp := false
 	for k, v := range arduino_linear_stat {
-		if k == "T" { temp = true}
+		if k == "T" {
+			temp = true
+		}
 		if conf.Sensors.Adj_T["value"] != 0 && k == "T" {
 			adjusted = v + conf.Sensors.Adj_T["value"]
 			SensorStat.WithLabelValues(k).Set(float64(adjusted))
@@ -135,9 +136,9 @@ func main() {
 			log.Printf("Siren on pin %d for low temperature set on %d", conf.Outputs["alarm"].PIN, conf.Alarms.Critical_temp)
 		}
 		if conf.Alarms.Email_enabled {
-			log.Printf("Email notification is for: %s ",conf.Alarms.Mailbox)
+			log.Printf("Email notification is for: %s ", conf.Alarms.Mailbox)
 		}
-		log.Printf("Adjustments: H %d, T %d ",conf.Sensors.Adj_H["value"], conf.Sensors.Adj_T["value"])
+		log.Printf("Adjustments: H %d, T %d ", conf.Sensors.Adj_H["value"], conf.Sensors.Adj_T["value"])
 	}
 	flush_serial()
 	Mticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
@@ -146,8 +147,12 @@ func main() {
 		for _ = range Mticker.C {
 			get_rpi_stat()
 			read_arduino()
-			if conf.Sensors.Bmp>0 { bmp180() }
-			if conf.Sensors.Dht>0 { dht11() }
+			if conf.Sensors.Bmp > 0 {
+				bmp180()
+			}
+			if conf.Sensors.Dht > 0 {
+				dht11()
+			}
 			time.Sleep(time.Second)
 			prometheus_update()
 			light_mgr()

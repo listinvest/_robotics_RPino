@@ -41,7 +41,6 @@ func add_exp(sensor string, value int) {
 
 }
 
-
 func dutycycle(sensor string) (up int) {
 	up = 0
 	num := arduino_linear_stat[sensor]
