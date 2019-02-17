@@ -146,8 +146,8 @@ func main() {
 		for _ = range Mticker.C {
 			get_rpi_stat()
 			read_arduino()
-			if conf.Sensors.Bmp { bmp180() }
-			if conf.Sensors.Dht { dht11() }
+			if conf.Sensors.Bmp>0 { bmp180() }
+			if conf.Sensors.Dht>0 { dht11() }
 			time.Sleep(time.Second)
 			prometheus_update()
 			light_mgr()

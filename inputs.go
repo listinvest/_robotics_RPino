@@ -9,7 +9,9 @@ import (
 	dht "github.com/d2r2/go-dht"
 )
 
-//var lock = &sync.Mutex{}
+var (
+	prev_temp = float32(0)
+)
 
 func start_inputs() {
 	if len(conf.Inputs) == 0 {
@@ -57,7 +59,7 @@ func bmp180() {
         }
         defer i2c.Close()
         sensor, err := bsbmp.NewBMP(bsbmp.BMP180, i2c)
-        if err != nil {
+	if err != nil {
                 log.Println(err)
         }
         // Read temperature in celsius degree
@@ -80,12 +82,12 @@ func bmp180() {
 	rpi_stat["bmp180_T"] = int(t)
 	rpi_stat["bmp180_P"] = int(p/100)
 	lock.Unlock()
+
 }
 
 func dht11() {
         if conf.Verbose { log.Println("Reading DHT11") }
-	temperature, humidity, _, err :=
-		dht.ReadDHTxxWithRetry(dht.DHT11, 14, false, 2)
+	temperature, humidity, _, err := dht.ReadDHTxxWithRetry(dht.DHT11, conf.Sensors.Dht, true, 3)
 	if err != nil {
 		log.Println(err)
 	}
@@ -93,7 +95,13 @@ func dht11() {
 		log.Printf("Temperature = %f*C, Humidity = %f%%", temperature, humidity)
         }
 	lock.Lock()
-	rpi_stat["dht_T"] = int(temperature)
+	if  prev_temp > 0  && temperature > (float32(prev_temp) * conf.Analysis.Lower_limit) && temperature <= (float32(prev_temp) * conf.Analysis.Upper_limit) {
+		rpi_stat["dht_T"] = int(temperature)
+		prev_temp = float32(temperature)
+	} else {
+		rpi_stat["dht_T"] = int(prev_temp)
+	}
+	// humidity seems to not suffer from false readings
 	rpi_stat["dht_H"] = int(humidity)
 	lock.Unlock()
 }
