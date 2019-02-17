@@ -18,9 +18,15 @@ func get_time() {
 	if conf.Verbose { log.Printf("Get time from: %s\n", conf.Time_server) }
 	actual_hour := 0
 	options := ntp.QueryOptions{ Timeout: 10*time.Second, TTL: 5 }
-	response,_ := ntp.QueryWithOptions(conf.Time_server, options)
-	remote_time := response.Time
-	hour,_,_ = remote_time.Clock()
+	response,err := ntp.QueryWithOptions(conf.Time_server, options)
+	if err != nil {
+		log.Println("NTP query error")
+		now := time.Now()
+		hour = now.Hour()
+	} else {
+		remote_time := response.Time
+		hour,_,_ = remote_time.Clock()
+	}
 	Lticker := time.NewTicker(time.Minute)
 	defer Lticker.Stop()
 	for _ = range Lticker.C {
@@ -53,7 +59,7 @@ func light_mgr() {
 	red := arduino_exp_stat["R"]
 	lock.Unlock()
 	on := 0
-	if conf.Lighting.Start < now && now < conf.Lighting.End  && red < conf.Lighting.Red {
+	if (conf.Lighting.Start < now && now < conf.Lighting.End)  && red < conf.Lighting.Red {
 		log.Printf("Red light component is %d, lower than threshold %d",red, conf.Lighting.Red)
 		if conf.Verbose { log.Printf("Lights on (h:%d)", now) }
 		on = 1

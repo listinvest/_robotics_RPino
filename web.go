@@ -80,26 +80,22 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 }
 
 func view_data() (reply string) {
-	reply = "Linear sensors:\n"
+	reply = "\nLinear sensors:\n"
 	for _, sensor := range conf.Sensors.Arduino_linear {
 		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_linear_stat[sensor]) + ", prev: "
 		for _, v := range arduino_prev_linear_stat[sensor] {
 			reply = reply + strconv.Itoa(v) + ", "
+		reply = reply +  "\n "
 		}
-		R := reference(sensor, 0)
-		used := strconv.Itoa(arduino_cache_stat[sensor])
-		reply = reply + "Reference: " + strconv.Itoa(R) + ", cache used " + used +"\n"
 	}
-	reply = reply + "Exponential sensors:\n"
+	reply = reply + "\n\nExponential sensors:\n"
 	for _, sensor := range conf.Sensors.Arduino_exp {
 		last := len(arduino_prev_exp_stat[sensor]) - 1
 		reply = reply + sensor + ": actual= " + strconv.Itoa(arduino_prev_exp_stat[sensor][last]) + ", prev: "
 		for _, v := range arduino_prev_exp_stat[sensor] {
 			reply = reply + strconv.Itoa(v) + ", "
 		}
-		M := float64(mma(sensor, 0))
-		used := strconv.Itoa(arduino_cache_stat[sensor])
-		reply = reply + "; cache used " + used + " times, MMA: " + strconv.FormatFloat(M, 'E', -1, 64) + "\n"
+		reply = reply +  "\n "
 	}
 
 	return reply
