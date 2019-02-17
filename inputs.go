@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	first_time = true
 	prev_temp = float32(0)
 )
 
@@ -95,11 +96,18 @@ func dht11() {
 		log.Printf("Temperature = %f*C, Humidity = %f%%", temperature, humidity)
         }
 	lock.Lock()
-	if  prev_temp > 0  && temperature > (float32(prev_temp) * conf.Analysis.Lower_limit) && temperature <= (float32(prev_temp) * conf.Analysis.Upper_limit) {
+	if  temperature > (float32(prev_temp) * conf.Analysis.Lower_limit) && temperature <= (float32(prev_temp) * conf.Analysis.Upper_limit) {
 		rpi_stat["dht_T"] = int(temperature)
 		prev_temp = float32(temperature)
 	} else {
 		rpi_stat["dht_T"] = int(prev_temp)
+		if conf.Verbose {
+			log.Printf("Temperature outside boundaries (centered on %f)", prev_temp)
+		}
+	}
+	if first_time {
+		prev_temp = temperature
+		first_time = false
 	}
 	// humidity seems to not suffer from false readings
 	rpi_stat["dht_H"] = int(humidity)
