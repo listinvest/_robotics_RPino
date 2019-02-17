@@ -66,6 +66,8 @@ type alarms struct {
 
 type analysis struct {
 	Depth       int     `toml:"historic_depth"`
+	Upper_limit float32 `toml:"upper_limit"`
+	Lower_limit float32 `toml:"lower_limit"`
 }
 
 type light struct {
