@@ -68,7 +68,10 @@ func get_rpi_stat() {
 		log.Println("RPi stats")
 	}
 	lock.Lock()
-	rpi_stat["wifi-signal"] = get_wireless_signal()
+	wifi := get_wireless_signal()
+	if wifi > 0 {
+		rpi_stat["wifi-signal"] = get_wireless_signal()
+	}
 	d, h := get_uptime()
 	rpi_stat["rpi_uptime_days"] = d
 	rpi_stat["rpi_uptime_hours"] = h

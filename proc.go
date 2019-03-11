@@ -25,15 +25,13 @@ func get_uptime() (days, hours int) {
 func get_wireless_signal() (w int) {
 	p := "/proc/net/wireless"
 	stats, missing := ioutil.ReadFile(p)
+	w = 0
 	if missing != nil {
 		fmt.Println("missing")
 	}
 	fields := strings.Fields(string(stats))
 	if len(fields) > 29 {
 		w, _ = strconv.Atoi(strings.TrimSuffix(fields[29], "."))
-	} else {
-		//fmt.Printf("wifi: %d \n",w)
-		w = 0
 	}
 	return w
 }
