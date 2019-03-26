@@ -168,6 +168,7 @@ func main() {
 	go siren_mgr()
 	go start_inputs()
 	go get_time()
+	go water_mgr()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)

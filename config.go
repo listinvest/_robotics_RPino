@@ -6,17 +6,18 @@ import (
 )
 
 type config struct {
-	Listen      string  `toml:"listen"`
-	Sensors     sensors `toml:"sensors"`
-	Verbose     bool    `toml:"verbose"`
-	Time_server string  `toml:"time_server"`
-	Inputs      map[string]rpigpio
-	Outputs     map[string]rpigpio
-	Lighting    light       `toml:"lighting"`
-	Alarms      alarms      `toml:"alarms"`
-	Analysis    analysis    `toml:"data_analysis"`
-	Speech      speech      `toml:"speech"`
-	Serial      serial_conf `toml:"serial"`
+	Listen       string  `toml:"listen"`
+	Sensors      sensors `toml:"sensors"`
+	Verbose      bool    `toml:"verbose"`
+	Time_server  string  `toml:"time_server"`
+	Inputs       map[string]rpigpio
+	Outputs      map[string]rpigpio
+	Lighting     light       `toml:"lighting"`
+	Alarms       alarms      `toml:"alarms"`
+	Analysis     analysis    `toml:"data_analysis"`
+	Speech       speech      `toml:"speech"`
+	Serial       serial_conf `toml:"serial"`
+	Temp_control tempc       `toml:"temp_control"`
 }
 
 type hours struct {
@@ -29,6 +30,12 @@ type rpigpio struct {
 
 type value struct {
 	Value int
+}
+
+type tempc struct {
+	Critical_temp int `toml:"critical_temp"`
+	Enabled       bool
+	Tap_open      int `toml:"tap_open"`
 }
 
 type sensors struct {
