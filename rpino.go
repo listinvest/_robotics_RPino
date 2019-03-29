@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"sync"
 	"time"
 )
@@ -33,6 +34,7 @@ var SerialStat = prometheus.NewCounterVec(prometheus.CounterOpts{
 var (
 	verbose                  bool
 	raising                  bool
+	logfile                  string
 	arduino_prev_linear_stat map[string][]int
 	arduino_prev_exp_stat    map[string][]int
 	arduino_linear_stat      map[string]int
@@ -120,6 +122,7 @@ func prometheus_update() {
 
 func main() {
 	confPath := flag.String("c", "cfg.cfg", "Configuration file")
+	logfile := flag.String("l", "/ramdisk/rpino.log", "Log file")
 	verbose := flag.Bool("v", false, "Enable logging")
 	flag.Parse()
 	start_time = time.Now()
@@ -131,6 +134,12 @@ func main() {
 
 	initialize_arduino()
 
+	f, err := os.OpenFile(*logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
 	log.SetPrefix("[RPino] ")
 	log.Printf("Prometheus metrics will be exposed on %s\n", conf.Listen)
 	if conf.Verbose {
