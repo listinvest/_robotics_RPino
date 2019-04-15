@@ -182,6 +182,7 @@ func main() {
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)
 	http.HandleFunc("/json", json_stats)
+	http.HandleFunc("/notify", PostHandler)
 	http.HandleFunc("/main", mainpage)
 	log.Fatal(http.ListenAndServe(conf.Listen, nil))
 }
