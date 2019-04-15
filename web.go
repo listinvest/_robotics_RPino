@@ -107,6 +107,22 @@ func view_conf() (reply string) {
 	return reply
 }
 
+// PostHandler converts post request body to string
+func PostHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Error reading request body",
+				http.StatusInternalServerError)
+		}
+		results = append(results, string(body))
+
+		fmt.Fprint(w, "POST done")
+	} else {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	}
+}
+
 func mainpage(w http.ResponseWriter, r *http.Request) {
 	hostname, _ := os.Hostname()
 	w.Write([]byte(`
