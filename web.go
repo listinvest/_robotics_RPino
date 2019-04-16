@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -109,14 +110,15 @@ func view_conf() (reply string) {
 
 // PostHandler converts post request body to string
 func PostHandler(w http.ResponseWriter, r *http.Request) {
+	results := ""
 	if r.Method == "POST" {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Error reading request body",
 				http.StatusInternalServerError)
 		}
-		results = append(results, string(body))
-
+		results = string(body)
+		log.Printf("Just got %s\n",results)
 		fmt.Fprint(w, "POST done")
 	} else {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
