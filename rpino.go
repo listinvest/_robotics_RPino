@@ -35,6 +35,7 @@ var (
 	verbose                  bool
 	raising                  bool
 	arduino_connected        bool
+	clock_offset		 int
 	logfile                  string
 	arduino_prev_linear_stat map[string][]int
 	arduino_prev_exp_stat    map[string][]int
@@ -79,6 +80,7 @@ func get_rpi_stat() {
 	rpi_stat["rpi_uptime_days"] = d
 	rpi_stat["rpi_uptime_hours"] = h
 	rpi_stat["cput"] = get_Cpu_temp()
+	rpi_stat["clock_offset"] = clock_offset
 	if arduino_connected {
 		rpi_stat["arduino_connected"] = 1
 	} else {
