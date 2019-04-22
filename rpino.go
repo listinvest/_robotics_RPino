@@ -34,6 +34,7 @@ var SerialStat = prometheus.NewCounterVec(prometheus.CounterOpts{
 var (
 	verbose                  bool
 	raising                  bool
+	arduino_connected        bool
 	logfile                  string
 	arduino_prev_linear_stat map[string][]int
 	arduino_prev_exp_stat    map[string][]int
@@ -78,6 +79,11 @@ func get_rpi_stat() {
 	rpi_stat["rpi_uptime_days"] = d
 	rpi_stat["rpi_uptime_hours"] = h
 	rpi_stat["cput"] = get_Cpu_temp()
+	if arduino_connected {
+		rpi_stat["arduino_connected"] = 1
+	} else {
+		rpi_stat["arduino_connected"] = 0
+	}
 	lock.Unlock()
 }
 
