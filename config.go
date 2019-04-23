@@ -20,16 +20,8 @@ type config struct {
 	Temp_control tempc       `toml:"temp_control"`
 }
 
-type hours struct {
-	Hour int
-}
-
 type rpigpio struct {
 	PIN int
-}
-
-type value struct {
-	Value int
 }
 
 type tempc struct {

@@ -164,7 +164,7 @@ func main() {
 	Mticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
 	defer Mticker.Stop()
 	go func() {
-		for _ = range Mticker.C {
+		for range Mticker.C {
 			get_rpi_stat()
 			read_arduino()
 			if conf.Sensors.Bmp > 0 {

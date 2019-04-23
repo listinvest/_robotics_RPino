@@ -98,7 +98,7 @@ func read_arduino() {
 	check := comm2_arduino("S")
 	lock.Lock()
 	arduino_linear_stat["check_error"] = 0
-	if strings.Index(check, "ok") == -1 { // check if the reply is what we asked
+	if !strings.Contains(check, "ok") { // check if the reply is what we asked
 		log.Printf("Periodic check failed (%q)!\n", check)
 		arduino_linear_stat["check_error"] = 1
 	}
@@ -116,7 +116,7 @@ func comm2_arduino(sensor string) (output string) {
 		log.Printf("%s\n", err)
 		arduino_connected = false
 	}
-	reg, err := regexp.Compile("[^0-9]+")
+	reg,_ := regexp.Compile("[^0-9]+")
 	cmd := sensor + "?\n"
 	starts := time.Now()
 	_, err = s.Write([]byte(cmd))
@@ -171,6 +171,6 @@ func flush_serial() {
 		arduino_connected = false
 	}
 	buf := make([]byte, 16)
-	_, err = s.Read(buf)
+	_, _ = s.Read(buf)
 	s.Close()
 }

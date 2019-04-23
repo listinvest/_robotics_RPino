@@ -8,6 +8,7 @@ import (
 )
 
 var hour int
+// Tlock is a shared lock
 var Tlock = &sync.Mutex{}
 
 func get_time() {
@@ -31,7 +32,7 @@ func get_time() {
 	}
 	Lticker := time.NewTicker(time.Minute)
 	defer Lticker.Stop()
-	for _ = range Lticker.C {
+	for range Lticker.C {
 		options := ntp.QueryOptions{Timeout: 10 * time.Second, TTL: 5}
 		response, errr := ntp.QueryWithOptions(conf.Time_server, options)
 		if errr == nil {

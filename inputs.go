@@ -38,7 +38,7 @@ func gpio_watch(sensor string, Spin int) {
 	Gticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second / 2)
 	defer Gticker.Stop()
 
-	for _ = range Gticker.C {
+	for range Gticker.C {
 		res := pin.Read()
 		//log.Printf("detected: %d",res)
 		lock.Lock()
