@@ -63,6 +63,6 @@ func get_entropy() (r int) {
 	if missing != nil {
 		fmt.Println(missing)
 	}
-	fmt.Printf("Entropy: %d\n", int(r))
+	//fmt.Printf("Entropy: %d\n", int(r))
 	return int(r)
 }
