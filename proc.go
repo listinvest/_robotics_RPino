@@ -37,7 +37,6 @@ func get_wireless_signal() (w int) {
 }
 
 func get_Cpu_temp() (t int) {
-
 	p := "/sys/class/thermal/thermal_zone0/temp"
 	stats, missing := ioutil.ReadFile(p)
 	if missing != nil {
@@ -51,4 +50,19 @@ func get_Cpu_temp() (t int) {
 	}
 	//fmt.Printf("CPU T: %d\n",int(t))
 	return int(t)
+}
+
+func get_entropy() (r int) {
+	p := "/proc/sys/kernel/random/entropy_avail"
+	stats, missing := ioutil.ReadFile(p)
+	if missing != nil {
+		fmt.Println("missing")
+	}
+	ent := strings.TrimSpace(string(stats))
+	r, missing = strconv.Atoi(ent)
+	if missing != nil {
+		fmt.Println(missing)
+	}
+	fmt.Printf("Entropy: %d\n", int(r))
+	return int(r)
 }

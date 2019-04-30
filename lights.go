@@ -8,6 +8,7 @@ import (
 )
 
 var hour int
+
 // Tlock is a shared lock
 var Tlock = &sync.Mutex{}
 
