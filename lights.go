@@ -37,7 +37,7 @@ func get_time() {
 			if err == nil {
 				remote_time := response.Time
 				actual_hour, _, _ = remote_time.Clock()
-				clock_offset = int(response.ClockOffset * time.Millisecond)
+				clock_offset = int(response.ClockOffset)
 				if conf.Verbose {
 					log.Printf("Got reply from ntp, offset %d\n", clock_offset)
 				}
