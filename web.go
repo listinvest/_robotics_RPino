@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -105,6 +106,23 @@ func view_conf() (reply string) {
 	reply = fmt.Sprintf("%q", conf.Sensors.Arduino_linear)
 	reply = reply + "\n" + fmt.Sprintf("%q", conf.Sensors.Arduino_exp)
 	return reply
+}
+
+// PostHandler converts post request body to string
+func PostHandler(w http.ResponseWriter, r *http.Request) {
+	results := ""
+	if r.Method == "POST" {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Error reading request body",
+				http.StatusInternalServerError)
+		}
+		results = string(body)
+		log.Printf("Just got %s\n",results)
+		fmt.Fprint(w, "POST done")
+	} else {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	}
 }
 
 func mainpage(w http.ResponseWriter, r *http.Request) {

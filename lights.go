@@ -8,13 +8,11 @@ import (
 )
 
 var hour int
+
+// Tlock is a shared lock
 var Tlock = &sync.Mutex{}
 
 func get_time() {
-	if conf.Lighting.Red == 0 {
-		log.Println("No light management, no internal cron needed.")
-		return
-	}
 	if conf.Verbose {
 		log.Printf("Get time from: %s\n", conf.Time_server)
 	}
@@ -31,12 +29,21 @@ func get_time() {
 	}
 	Lticker := time.NewTicker(time.Minute)
 	defer Lticker.Stop()
-	for _ = range Lticker.C {
+	for range Lticker.C {
 		options := ntp.QueryOptions{Timeout: 10 * time.Second, TTL: 5}
 		response, errr := ntp.QueryWithOptions(conf.Time_server, options)
 		if errr == nil {
-			remote_time := response.Time
-			actual_hour, _, _ = remote_time.Clock()
+			err = response.Validate()
+			if err == nil {
+				remote_time := response.Time
+				actual_hour, _, _ = remote_time.Clock()
+				clock_offset = int(response.ClockOffset)
+				if conf.Verbose {
+					log.Printf("Got reply from ntp, offset %d\n", clock_offset)
+				}
+			} else {
+				log.Printf("Unsuitable reply from NTP server\n")
+			}
 		} else {
 			log.Printf("Error NTP: %s  !", errr)
 			now := time.Now()

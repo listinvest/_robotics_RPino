@@ -85,9 +85,8 @@ func siren_mgr() {
 		log.Fatal("Alarm configured but GPIO for the siren is not!")
 		os.Exit(1)
 	}
-	var pin rpio.Pin
 	// Open and map memory to access gpio, check for errors
-	pin = rpio.Pin(conf.Outputs["alarm"].PIN)
+	var pin = rpio.Pin(conf.Outputs["alarm"].PIN)
 	if err := rpio.Open(); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
@@ -127,7 +126,7 @@ func alarm_mgr() {
 		os.Exit(1)
 	}
 
-	for _ = range Aticker.C {
+	for range Aticker.C {
 		lock.Lock()
 		actual_temp := arduino_linear_stat["T"]
 		//human := arduino_linear_stat["U"]
@@ -244,30 +243,29 @@ func send_email(temp string) (sent bool) {
 		log.Printf("%s", err)
 		c.Quit()
 		return false
-	} else {
-		// To && From
-		if err = c.Mail(from.Address); err != nil {
-			log.Printf("%s", err)
-		}
-		if err = c.Rcpt(to.Address); err != nil {
-			log.Printf("%s", err)
-		}
-		// Data
-		w, err := c.Data()
-		if err != nil {
-			log.Printf("%s", err)
-		}
-		_, err = w.Write([]byte(message))
-		if err != nil {
-			log.Printf("%s", err)
-		}
-		err = w.Close()
-		if err != nil {
-			log.Printf("%s", err)
-		}
-		c.Quit()
-		return true
 	}
+	// To && From
+	if err = c.Mail(from.Address); err != nil {
+		log.Printf("%s", err)
+	}
+	if err = c.Rcpt(to.Address); err != nil {
+		log.Printf("%s", err)
+	}
+	// Data
+	w, err := c.Data()
+	if err != nil {
+		log.Printf("%s", err)
+	}
+	_, err = w.Write([]byte(message))
+	if err != nil {
+		log.Printf("%s", err)
+	}
+	err = w.Close()
+	if err != nil {
+		log.Printf("%s", err)
+	}
+	c.Quit()
+	return true
 }
 
 func slack_notify(temp int) {
@@ -291,5 +289,43 @@ func slack_notify(temp int) {
 		fmt.Printf("%s\n", err)
 	} else {
 		fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
+	}
+}
+
+func water_mgr() {
+	if !conf.Temp_control.Enabled {
+		return
+	}
+	if conf.Verbose {
+		log.Printf("Water cooling  manager on\n")
+	}
+	if conf.Outputs["water_supply"].PIN == 0 {
+		log.Fatal("Water cooling configured but GPIO for the tap is not!")
+		os.Exit(1)
+	}
+	// Open and map memory to access gpio, check for errors
+	var pin = rpio.Pin(conf.Outputs["water_supply"].PIN)
+	if err := rpio.Open(); err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	pin.Output()
+	defer rpio.Close()
+	pin.Low()
+	for {
+		time.Sleep(time.Minute)
+		lock.Lock()
+		actual_temp := arduino_linear_stat["T"]
+		//human := arduino_linear_stat["U"]
+		lock.Unlock()
+		// temperature alarm
+		if actual_temp > 0 && actual_temp < conf.Temp_control.Critical_temp {
+			if conf.Verbose {
+				log.Printf("Tap is OPEN!!\n")
+			}
+			pin.High()
+			time.Sleep(time.Second * time.Duration(conf.Temp_control.Tap_open))
+			pin.Low()
+		}
 	}
 }

@@ -57,6 +57,7 @@ func read_arduino() {
 			arduino_cache_stat[s] = arduino_cache_stat[s] + 1
 		}
 		reply = ""
+		if arduino_cache_stat[s] > conf.Analysis.Cache_age { validated = 0 }
 		lock.Lock()
 		arduino_linear_stat[s] = validated
 		lock.Unlock()
@@ -85,6 +86,7 @@ func read_arduino() {
 		}
 
 		reply = ""
+		if arduino_cache_stat[s] > conf.Analysis.Cache_age { validated = 0 }
 		lock.Lock()
 		if validated > 0 {
 			inverted := int(1 / float32(validated) * 10000)
@@ -96,7 +98,7 @@ func read_arduino() {
 	check := comm2_arduino("S")
 	lock.Lock()
 	arduino_linear_stat["check_error"] = 0
-	if strings.Index(check, "ok") == -1 { // check if the reply is what we asked
+	if !strings.Contains(check, "ok") { // check if the reply is what we asked
 		log.Printf("Periodic check failed (%q)!\n", check)
 		arduino_linear_stat["check_error"] = 1
 	}
@@ -111,9 +113,10 @@ func comm2_arduino(sensor string) (output string) {
 	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
 	s, err := serial.OpenPort(c)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("%s\n", err)
+		arduino_connected = false
 	}
-	reg, err := regexp.Compile("[^0-9]+")
+	reg,_ := regexp.Compile("[^0-9]+")
 	cmd := sensor + "?\n"
 	starts := time.Now()
 	_, err = s.Write([]byte(cmd))
@@ -156,6 +159,7 @@ func comm2_arduino(sensor string) (output string) {
 	return output
 }
 
+// not useful anymore with USB connection
 func flush_serial() {
 	if conf.Serial.Tty == "none" {
 		return
@@ -163,9 +167,10 @@ func flush_serial() {
 	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
 	s, err := serial.OpenPort(c)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("%s\n", err)
+		arduino_connected = false
 	}
 	buf := make([]byte, 16)
-	_, err = s.Read(buf)
+	_, _ = s.Read(buf)
 	s.Close()
 }
