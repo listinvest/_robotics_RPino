@@ -119,9 +119,9 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Error reading request body",
 				http.StatusInternalServerError)
 		}
-		if !json.Valid(body) {
-			var json_message Msg
-			json.Unmarshal(body, json_message)
+		var json_message Msg
+		err = json.Unmarshal(body, json_message)
+		if err == nil {
 			log.Printf("good %s", json_message.Alarm)
 		} else {
 			fmt.Fprint(w, "invalid JSON received by POST")
