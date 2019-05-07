@@ -36,6 +36,7 @@ var (
 	raising                  bool
 	arduino_connected        bool
 	clock_offset             int
+	cpu_load		 int
 	logfile                  string
 	arduino_prev_linear_stat map[string][]int
 	arduino_prev_exp_stat    map[string][]int
@@ -79,7 +80,8 @@ func get_rpi_stat() {
 	d, h := get_uptime()
 	rpi_stat["rpi_uptime_days"] = d
 	rpi_stat["rpi_uptime_hours"] = h
-	rpi_stat["cput"] = get_Cpu_temp()
+	rpi_stat["cput"] = get_cpu_temp()
+	rpi_stat["cpu_load"] = cpu_load
 	rpi_stat["clock_offset"] = clock_offset
 	rpi_stat["entropy"] = get_entropy()
 	if arduino_connected {
@@ -179,6 +181,7 @@ func main() {
 			light_mgr()
 		}
 	}()
+
 	go send_gpio1(gpio1)
 	go send_gpio2(gpio2)
 	go input_presence()
@@ -187,6 +190,7 @@ func main() {
 	go start_inputs()
 	go get_time()
 	go water_mgr()
+	go get_cpu_usage()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)
