@@ -197,5 +197,6 @@ func main() {
 	http.HandleFunc("/json", json_stats)
 	http.HandleFunc("/notify", PostHandler)
 	http.HandleFunc("/main", mainpage)
+	fmt.Printf("Rpino is up\n")
 	log.Fatal(http.ListenAndServe(conf.Listen, nil))
 }

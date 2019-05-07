@@ -111,7 +111,7 @@ func view_conf() (reply string) {
 // PostHandler converts post request body to string
 func PostHandler(w http.ResponseWriter, r *http.Request) {
 	type Msg struct {
-		Alarm bool
+		Siren bool
 	}
 	if r.Method == "POST" {
 		body, err := ioutil.ReadAll(r.Body)
@@ -120,11 +120,11 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 				http.StatusInternalServerError)
 		}
 		var json_message Msg
-		err = json.Unmarshal(body, json_message)
+		err = json.Unmarshal(body, &json_message)
 		if err == nil {
-			log.Printf("good %s", json_message.Alarm)
+			log.Printf("received a good json %t", json_message.Siren)
 		} else {
-			fmt.Fprint(w, "invalid JSON received by POST")
+			fmt.Fprintf(w, "invalid JSON - %s",err)
 		}
 
 	} else {
