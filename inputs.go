@@ -4,7 +4,9 @@ import (
 	"github.com/d2r2/go-bsbmp"
 	dht "github.com/d2r2/go-dht"
 	"github.com/d2r2/go-i2c"
+	"github.com/makers-bierzo/sds011"
 	"github.com/stianeikeland/go-rpio"
+	"github.com/tarm/serial"
 	"log"
 	"time"
 )
@@ -91,7 +93,7 @@ func dht11() {
 	if conf.Verbose {
 		log.Println("Reading DHT11")
 	}
-	temperature, humidity, _, err := dht.ReadDHTxxWithRetry(dht.DHT11, conf.Sensors.Dht, true, 3)
+	temperature, humidity, _, err := dht.ReadDHTxxWithRetry(dht.DHT11, 14, true, 3)
 	if err != nil {
 		log.Println(err)
 	}
@@ -115,4 +117,35 @@ func dht11() {
 	// humidity seems to not suffer from false readings
 	rpi_stat["dht_H"] = int(humidity)
 	lock.Unlock()
+}
+
+func sds11() {
+	if conf.Verbose {
+		log.Println("Reading SDS11")
+	}
+	//set a x seconds ticker
+	Gticker := time.NewTicker(2 * time.Minute)
+	defer Gticker.Stop()
+
+	for range Gticker.C {
+		c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600}
+		s, err := serial.OpenPort(c)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		sensor := sds011.NewSensor(s)
+
+		_ = sensor.Sleep(false)
+		_ = sensor.SetMode(sds011.QueryMode)
+
+		// Wait to spin fan
+		time.Sleep(15 * time.Second)
+
+		measure, _ := sensor.Query()
+		pm2 = measure.PM2_5
+		pm10 = measure.PM10
+		//log.Printf("[%s]\nPM 2.5 => %f μg/m³\nPM 10 => %f μg/m³\n", time.Now().Format("2006-01-02 15:04:05"), measure.PM2_5, measure.PM10)
+		_ = sensor.Sleep(true)
+	}
 }

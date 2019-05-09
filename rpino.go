@@ -36,6 +36,8 @@ var (
 	verbose                  bool
 	raising                  bool
 	arduino_connected        bool
+	pm2		         float32
+	pm10		         float32
 	clock_offset             int
 	cpu_load		 int
 	logfile                  string
@@ -111,6 +113,10 @@ func prometheus_update() {
 			SensorStat.WithLabelValues(k).Set(float64(v))
 		}
 	}
+	if conf.Sensors.Sds11 {
+		SensorStat.WithLabelValues("pm2").Set(float64(pm2))
+		SensorStat.WithLabelValues("pm10").Set(float64(pm10))
+	}
 	for k, v := range arduino_exp_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
 	}
@@ -171,10 +177,10 @@ func main() {
 		for range Mticker.C {
 			get_rpi_stat()
 			read_arduino()
-			if conf.Sensors.Bmp > 0 {
+			if conf.Sensors.Bmp {
 				bmp180()
 			}
-			if conf.Sensors.Dht > 0 {
+			if conf.Sensors.Dht {
 				dht11()
 			}
 			time.Sleep(time.Second)
@@ -192,6 +198,7 @@ func main() {
 	go get_time()
 	go water_mgr()
 	go get_cpu_usage()
+	if conf.Sensors.Sds11 { go sds11() }
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)

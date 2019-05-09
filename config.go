@@ -36,8 +36,9 @@ type sensors struct {
 	Poll_interval  int      `toml:"poll_interval"`
 	Adj_H          map[string]int
 	Adj_T          map[string]int
-	Bmp            int `toml:"bmp"`
-	Dht            int `toml:"dht"`
+	Bmp            bool `toml:"bmp"`
+	Dht            bool `toml:"dht"`
+	Sds11          bool `toml:"sds11"`
 }
 
 type speech struct {
