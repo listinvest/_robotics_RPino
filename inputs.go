@@ -123,29 +123,30 @@ func sds11() {
 	if conf.Verbose {
 		log.Println("Reading SDS11")
 	}
-	//set a x seconds ticker
-	Gticker := time.NewTicker(2 * time.Minute)
-	defer Gticker.Stop()
+	c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Printf("%s", err)
+	}
 
-	for range Gticker.C {
-		c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600}
-		s, err := serial.OpenPort(c)
-		if err != nil {
-			log.Fatal(err)
-		}
+	sensor := sds011.NewSensor(s)
 
-		sensor := sds011.NewSensor(s)
+	_ = sensor.Sleep(false)
+	_ = sensor.SetWorkingPeriod(1)
+	_ = sensor.SetMode(sds011.ActiveMode)
 
-		_ = sensor.Sleep(false)
-		_ = sensor.SetMode(sds011.QueryMode)
+	measureChannel := make(chan sds011.Measurement)
+	sensor.OnQuery(measureChannel)
 
-		// Wait to spin fan
-		time.Sleep(15 * time.Second)
-
-		measure, _ := sensor.Query()
+	sensor.Listen()
+	for true {
+		measure := <- measureChannel
+		lock.Lock()
 		pm2 = measure.PM2_5
 		pm10 = measure.PM10
-		//log.Printf("[%s]\nPM 2.5 => %f μg/m³\nPM 10 => %f μg/m³\n", time.Now().Format("2006-01-02 15:04:05"), measure.PM2_5, measure.PM10)
-		_ = sensor.Sleep(true)
+		lock.Unlock()
+		if conf.Verbose {
+			log.Printf("[%s]\nPM 2.5 => %f μg/m³\nPM 10 => %f μg/m³\n", time.Now().Format("2006-01-02 15:04:05"), pm2,pm10)
+		}
 	}
 }
