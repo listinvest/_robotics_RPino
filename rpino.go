@@ -158,6 +158,7 @@ func main() {
 	defer f.Close()
 	log.SetOutput(f)
 	log.SetPrefix("[RPino] ")
+	log.Printf("Git version: %s\n", get_git_info())
 	log.Printf("Prometheus metrics will be exposed on %s\n", conf.Listen)
 	if conf.Verbose {
 		log.Printf("Verbose logging is enabled")

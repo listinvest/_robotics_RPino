@@ -110,3 +110,14 @@ func get_cpu_usage() {
 	}
 
 }
+
+func get_git_info() (commit string) {
+	p := ".git/refs/heads/master"
+	contents, missing := ioutil.ReadFile(p)
+	if missing != nil {
+		fmt.Println("git info missing")
+	}
+	commit = string(contents)
+	return commit
+}
+
