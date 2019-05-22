@@ -10,6 +10,7 @@ type config struct {
 	Sensors      sensors `toml:"sensors"`
 	Verbose      bool    `toml:"verbose"`
 	Time_server  string  `toml:"time_server"`
+	Logfile      string  `toml:"log_file"`
 	Inputs       map[string]rpigpio
 	Outputs      map[string]rpigpio
 	Lighting     light       `toml:"lighting"`
