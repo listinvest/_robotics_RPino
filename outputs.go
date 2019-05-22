@@ -88,7 +88,7 @@ func siren_mgr() {
 	// Open and map memory to access gpio, check for errors
 	var pin = rpio.Pin(conf.Outputs["alarm"].PIN)
 	if err := rpio.Open(); err != nil {
-		log.Fatal(err)
+		log.Fatal("Cannot open alarm pin")
 		os.Exit(1)
 	}
 	pin.Output()
