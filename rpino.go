@@ -87,10 +87,12 @@ func get_rpi_stat() {
 	rpi_stat["cpu_load"] = cpu_load
 	rpi_stat["clock_offset"] = clock_offset
 	rpi_stat["entropy"] = get_entropy()
-	if arduino_connected {
-		rpi_stat["arduino_connected"] = 1
-	} else {
-		rpi_stat["arduino_connected"] = 0
+	if conf.Serial.Tty != "none" {
+		if arduino_connected {
+			rpi_stat["arduino_connected"] = 1
+		} else {
+			rpi_stat["arduino_connected"] = 0
+		}
 	}
 	lock.Unlock()
 }
