@@ -22,11 +22,6 @@ func initialize_arduino() {
 	arduino_cache_stat = make(map[string]int, n)
 	arduino_prev_exp_stat = make(map[string][]int, n)
 	history_setup()
-	serial_stat = make(map[string]int)
-	serial_stat["good_read"] = 1
-	serial_stat["failed_read"] = 1
-	serial_stat["failed_atoi"] = 1
-	serial_stat["failed_interval"] = 1
 }
 
 func read_arduino() {
@@ -45,7 +40,6 @@ func read_arduino() {
 			output, err := strconv.Atoi(reply)
 			if err != nil {
 				log.Printf("Failed conversion: %s\n", err)
-				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
 				validated = last_linear(s)
 			} else {
 				validated = output
@@ -72,7 +66,6 @@ func read_arduino() {
 			output, err := strconv.Atoi(reply)
 			if err != nil {
 				log.Printf("Failed conversion: %s\n", err)
-				serial_stat["failed_atoi"] = serial_stat["failed_atoi"] + 1
 				validated = last_exp(s)
 			} else {
 				validated = output
@@ -103,7 +96,6 @@ func read_arduino() {
 		arduino_linear_stat["check_error"] = 1
 	}
 	lock.Unlock()
-	flush_serial()
 }
 
 func comm2_arduino(sensor string) (output string) {
@@ -135,7 +127,6 @@ func comm2_arduino(sensor string) (output string) {
 	}
 	if failed != nil {
 		log.Printf("error: %s\n", failed)
-		serial_stat["failed_read"] = serial_stat["failed_read"] + 1
 		output = "null"
 	} else {
 		reply := string(buf)
@@ -148,29 +139,11 @@ func comm2_arduino(sensor string) (output string) {
 			}
 			reply = strings.Replace(reply, sensor+": ", "", 1)
 			output = reg.ReplaceAllString(reply, "")
-			serial_stat["good_read"] = serial_stat["good_read"] + 1
 		} else {
 			log.Printf("Unexpected reply\n")
-			serial_stat["failed_read"] = serial_stat["failed_read"] + 1
 			output = "null"
 		}
 	}
 	s.Close()
 	return output
-}
-
-// not useful anymore with USB connection
-func flush_serial() {
-	if conf.Serial.Tty == "none" {
-		return
-	}
-	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
-	s, err := serial.OpenPort(c)
-	if err != nil {
-		log.Printf("%s\n", err)
-		arduino_connected = false
-	}
-	buf := make([]byte, 16)
-	_, _ = s.Read(buf)
-	s.Close()
 }

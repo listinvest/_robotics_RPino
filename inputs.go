@@ -44,7 +44,7 @@ func gpio_watch(sensor string, Spin int) {
 		res := pin.Read()
 		//log.Printf("detected: %d",res)
 		lock.Lock()
-		rpi_stat[sensor] = int(res)
+		sensor_stat[sensor] = int(res)
 		lock.Unlock()
 		if res == 1 {
 			input <- true
@@ -83,8 +83,8 @@ func bmp180() {
 		log.Printf("Pressure = %f millibar", p/100)
 	}
 	lock.Lock()
-	rpi_stat["bmp180_T"] = int(t)
-	rpi_stat["bmp180_P"] = int(p / 100)
+	sensor_stat["bmp180_T"] = int(t)
+	sensor_stat["bmp180_P"] = int(p / 100)
 	lock.Unlock()
 
 }
@@ -102,10 +102,10 @@ func dht11() {
 	}
 	lock.Lock()
 	if temperature > (float32(prev_temp)*conf.Analysis.Lower_limit) && temperature <= (float32(prev_temp)*conf.Analysis.Upper_limit) {
-		rpi_stat["dht_T"] = int(temperature)
+		sensor_stat["dht_T"] = int(temperature)
 		prev_temp = float32(temperature)
 	} else {
-		rpi_stat["dht_T"] = int(prev_temp)
+		sensor_stat["dht_T"] = int(prev_temp)
 		if conf.Verbose {
 			log.Printf("Temperature outside boundaries (centered on %f)", prev_temp)
 		}
@@ -115,7 +115,7 @@ func dht11() {
 		first_time = false
 	}
 	// humidity seems to not suffer from false readings
-	rpi_stat["dht_H"] = int(humidity)
+	sensor_stat["dht_H"] = int(humidity)
 	lock.Unlock()
 }
 
@@ -142,11 +142,11 @@ func sds11() {
 	for true {
 		measure := <- measureChannel
 		lock.Lock()
-		pm2 = measure.PM2_5
-		pm10 = measure.PM10
+		sensor_stat["pm2"] = int(measure.PM2_5)
+		sensor_stat["pm10"] = int(measure.PM10)
 		lock.Unlock()
 		if conf.Verbose {
-			log.Printf("[%s]\nPM 2.5 => %f μg/m³\nPM 10 => %f μg/m³\n", time.Now().Format("2006-01-02 15:04:05"), pm2,pm10)
+			log.Printf("[%s]\nPM 2.5 => %f μg/m³\nPM 10 => %f μg/m³\n", time.Now().Format("2006-01-02 15:04:05"),measure.PM2_5,measure.PM10)
 		}
 	}
 }

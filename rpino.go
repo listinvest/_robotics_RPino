@@ -26,18 +26,10 @@ var RPIStat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 },
 	[]string{"rpi"})
 
-var SerialStat = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Name: "SerialStats",
-	Help: "Serial stats",
-},
-	[]string{"type"})
-
 var (
 	verbose                  bool
 	raising                  bool
 	arduino_connected        bool
-	pm2		         float32
-	pm10		         float32
 	clock_offset             int
 	cpu_load		 int
 	logfile                  string
@@ -46,7 +38,7 @@ var (
 	arduino_linear_stat      map[string]int
 	arduino_exp_stat         map[string]int
 	arduino_cache_stat       map[string]int
-	serial_stat              map[string]int
+	sensor_stat              map[string]int
 	rpi_stat                 map[string]int
 	arduino_in               chan (string) // questions to  Arduino
 	arduino_out              chan (string) // replies from Arduino
@@ -59,7 +51,6 @@ var lock = &sync.Mutex{}
 func init() {
 	prometheus.MustRegister(SensorStat)
 	prometheus.MustRegister(RPIStat)
-	prometheus.MustRegister(SerialStat)
 	gpio1 = make(chan string)
 	gpio2 = make(chan string)
 	arduino_in = make(chan string)
@@ -69,6 +60,7 @@ func init() {
 		log.Fatal(err)
 	}
 	rpi_stat = make(map[string]int)
+	sensor_stat = make(map[string]int, 10)
 }
 
 func get_rpi_stat() {
@@ -101,6 +93,9 @@ func prometheus_update() {
 	lock.Lock()
 	adjusted := 0
 	temp := false
+	for k, v := range sensor_stat {
+		SensorStat.WithLabelValues(k).Set(float64(v))
+	}
 	for k, v := range arduino_linear_stat {
 		if k == "T" {
 			temp = true
@@ -115,10 +110,10 @@ func prometheus_update() {
 			SensorStat.WithLabelValues(k).Set(float64(v))
 		}
 	}
-	if conf.Sensors.Sds11 {
-		SensorStat.WithLabelValues("pm2").Set(float64(pm2))
-		SensorStat.WithLabelValues("pm10").Set(float64(pm10))
-	}
+	//if conf.Sensors.Sds11 {
+	//	SensorStat.WithLabelValues("pm2").Set(float64(pm2))
+	//	SensorStat.WithLabelValues("pm10").Set(float64(pm10))
+	//}
 	for k, v := range arduino_exp_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
 	}
@@ -130,13 +125,6 @@ func prometheus_update() {
 		RPIStat.WithLabelValues(k).Set(float64(v))
 	}
 
-	for k, v := range serial_stat {
-		SerialStat.WithLabelValues(k).Add(float64(v))
-		serial_stat[k] = 0
-	}
-	if arduino_linear_stat["check_error"] == 1 {
-		SerialStat.WithLabelValues("check_error").Add(float64(1))
-	}
 	lock.Unlock()
 }
 
@@ -172,7 +160,6 @@ func main() {
 		}
 		log.Printf("Adjustments: H %d, T %d ", conf.Sensors.Adj_H["value"], conf.Sensors.Adj_T["value"])
 	}
-	flush_serial()
 	Mticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
 	defer Mticker.Stop()
 	go func() {
