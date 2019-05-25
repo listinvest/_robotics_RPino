@@ -27,6 +27,7 @@ func initialize_arduino() {
 	serial_stat["failed_read"] = 1
 	serial_stat["failed_atoi"] = 1
 	serial_stat["failed_interval"] = 1
+	arduino_connected = true
 }
 
 func read_arduino() {
@@ -115,6 +116,7 @@ func comm2_arduino(sensor string) (output string) {
 	if err != nil {
 		log.Printf("%s\n", err)
 		arduino_connected = false
+		return
 	}
 	reg,_ := regexp.Compile("[^0-9]+")
 	cmd := sensor + "?\n"
@@ -169,6 +171,7 @@ func flush_serial() {
 	if err != nil {
 		log.Printf("%s\n", err)
 		arduino_connected = false
+		return
 	}
 	buf := make([]byte, 16)
 	_, _ = s.Read(buf)
