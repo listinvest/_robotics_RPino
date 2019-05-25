@@ -149,7 +149,6 @@ func comm2_arduino(sensor string) (output string) {
 	s.Close()
 	return output
 }
-<<<<<<< HEAD
 
 // not useful anymore with USB connection
 func flush_serial() {
@@ -167,5 +166,3 @@ func flush_serial() {
 	_, _ = s.Read(buf)
 	s.Close()
 }
-=======
->>>>>>> 2ffda0bc0121cfba9c0c4976fd168e24e9a53132
