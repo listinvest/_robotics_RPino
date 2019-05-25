@@ -22,6 +22,7 @@ func initialize_arduino() {
 	arduino_cache_stat = make(map[string]int, n)
 	arduino_prev_exp_stat = make(map[string][]int, n)
 	history_setup()
+	arduino_connected = true
 }
 
 func read_arduino() {
