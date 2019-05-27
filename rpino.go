@@ -110,10 +110,6 @@ func prometheus_update() {
 			SensorStat.WithLabelValues(k).Set(float64(v))
 		}
 	}
-	//if conf.Sensors.Sds11 {
-	//	SensorStat.WithLabelValues("pm2").Set(float64(pm2))
-	//	SensorStat.WithLabelValues("pm10").Set(float64(pm10))
-	//}
 	for k, v := range arduino_exp_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
 	}

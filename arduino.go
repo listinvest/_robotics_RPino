@@ -97,6 +97,7 @@ func read_arduino() {
 		arduino_linear_stat["check_error"] = 1
 	}
 	lock.Unlock()
+	flush_serial()
 }
 
 func comm2_arduino(sensor string) (output string) {
@@ -123,7 +124,7 @@ func comm2_arduino(sensor string) (output string) {
 	buf := []byte("________")
 	nbytes, failed := s.Read(buf)
 	t := time.Now()
-	elapseds := t.Sub(starts)
+	elapsed := t.Sub(starts)
 	if nbytes < 3 {
 		_, failed = s.Read(buf)
 	}
@@ -133,7 +134,7 @@ func comm2_arduino(sensor string) (output string) {
 	} else {
 		reply := string(buf)
 		if conf.Verbose {
-			log.Printf("Got %d bytes: %s, took %f", nbytes, reply, elapseds.Seconds())
+			log.Printf("Got %d bytes: %s, took %f", nbytes, reply, elapsed.Seconds())
 		}
 		if strings.Index(reply, sensor) == 0 { // check if the reply is what we asked
 			if sensor == "S" {
