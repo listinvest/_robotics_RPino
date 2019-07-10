@@ -63,6 +63,7 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 
 	case "/api/history_reset":
 		history_setup()
+		initialize_arduino()
 		w.Write([]byte("ok"))
 
 	case "/api/view_data":

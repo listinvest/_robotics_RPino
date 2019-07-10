@@ -13,6 +13,7 @@ func initialize_arduino() {
 	if conf.Serial.Tty == "none" {
 		return
 	}
+	lock.Lock()
 	// initialize maps
 	n := len(conf.Sensors.Arduino_linear)
 	arduino_linear_stat = make(map[string]int, n)
@@ -22,7 +23,8 @@ func initialize_arduino() {
 	arduino_cache_stat = make(map[string]int, n)
 	arduino_prev_exp_stat = make(map[string][]int, n)
 	history_setup()
-	arduino_connected = true
+	arduino_connected = false
+	lock.Unlock()
 }
 
 func read_arduino() {
@@ -91,24 +93,23 @@ func read_arduino() {
 	}
 	check := comm2_arduino("S")
 	lock.Lock()
-	arduino_linear_stat["check_error"] = 0
 	if !strings.Contains(check, "ok") { // check if the reply is what we asked
 		log.Printf("Periodic check failed (%q)!\n", check)
-		arduino_linear_stat["check_error"] = 1
 	}
 	lock.Unlock()
-	flush_serial()
 }
 
 func comm2_arduino(sensor string) (output string) {
 	if conf.Serial.Tty == "none" {
 		return
 	}
+	lock.Lock()
+	arduino_connected = false
+	lock.Unlock()
 	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
 	s, err := serial.OpenPort(c)
 	if err != nil {
 		log.Printf("%s\n", err)
-		arduino_connected = false
 		return
 	}
 	reg,_ := regexp.Compile("[^0-9]+")
@@ -138,6 +139,9 @@ func comm2_arduino(sensor string) (output string) {
 		}
 		if strings.Index(reply, sensor) == 0 { // check if the reply is what we asked
 			if sensor == "S" {
+				lock.Lock()
+				arduino_connected = true
+				lock.Unlock()
 				return "ok"
 			}
 			reply = strings.Replace(reply, sensor+": ", "", 1)
@@ -151,19 +155,3 @@ func comm2_arduino(sensor string) (output string) {
 	return output
 }
 
-// not useful anymore with USB connection
-func flush_serial() {
-	if conf.Serial.Tty == "none" {
-		return
-	}
-	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
-	s, err := serial.OpenPort(c)
-	if err != nil {
-		log.Printf("%s\n", err)
-		arduino_connected = false
-		return
-	}
-	buf := make([]byte, 16)
-	_, _ = s.Read(buf)
-	s.Close()
-}

@@ -80,11 +80,14 @@ func get_rpi_stat() {
 	rpi_stat["clock_offset"] = clock_offset
 	rpi_stat["entropy"] = get_entropy()
 	if conf.Serial.Tty != "none" {
+		rpi_stat["arduino_present"] = 1
 		if arduino_connected {
 			rpi_stat["arduino_connected"] = 1
 		} else {
 			rpi_stat["arduino_connected"] = 0
 		}
+	} else {
+		rpi_stat["arduino_present"] = 0
 	}
 	lock.Unlock()
 }
@@ -110,6 +113,7 @@ func prometheus_update() {
 			SensorStat.WithLabelValues(k).Set(float64(v))
 		}
 	}
+
 	for k, v := range arduino_exp_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
 	}
@@ -120,7 +124,6 @@ func prometheus_update() {
 	for k, v := range rpi_stat {
 		RPIStat.WithLabelValues(k).Set(float64(v))
 	}
-
 	lock.Unlock()
 }
 
@@ -160,8 +163,8 @@ func main() {
 	defer Mticker.Stop()
 	go func() {
 		for range Mticker.C {
-			get_rpi_stat()
 			read_arduino()
+			get_rpi_stat()
 			if conf.Sensors.Bmp {
 				bmp180()
 			}
