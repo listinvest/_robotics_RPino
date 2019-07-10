@@ -30,8 +30,10 @@ var (
 	verbose                  bool
 	raising                  bool
 	arduino_connected        bool
+	arduino_comm_time        float64
 	clock_offset             int
 	cpu_load		 int
+	iterations		 int64
 	logfile                  string
 	arduino_prev_linear_stat map[string][]int
 	arduino_prev_exp_stat    map[string][]int
@@ -113,7 +115,9 @@ func prometheus_update() {
 			SensorStat.WithLabelValues(k).Set(float64(v))
 		}
 	}
-
+	if conf.Serial.Tty != "none" {
+		RPIStat.WithLabelValues("arduino_comm_time").Set(arduino_comm_time)
+	}
 	for k, v := range arduino_exp_stat {
 		SensorStat.WithLabelValues(k).Set(float64(v))
 	}
@@ -124,6 +128,8 @@ func prometheus_update() {
 	for k, v := range rpi_stat {
 		RPIStat.WithLabelValues(k).Set(float64(v))
 	}
+	RPIStat.WithLabelValues("iterations").Set(float64(iterations))
+	iterations++
 	lock.Unlock()
 }
 
@@ -139,7 +145,8 @@ func main() {
 	}
 
 	initialize_arduino()
-
+	flush_serial()
+	iterations = 0
 	f, err := os.OpenFile(conf.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening log file")
@@ -158,6 +165,9 @@ func main() {
 			log.Printf("Email notification is for: %s ", conf.Alarms.Mailbox)
 		}
 		log.Printf("Adjustments: H %d, T %d ", conf.Sensors.Adj_H["value"], conf.Sensors.Adj_T["value"])
+		if conf.Serial.Tty != "none" {
+			log.Printf("Arduino connected on port: %s ", conf.Serial.Tty)
+		}
 	}
 	Mticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
 	defer Mticker.Stop()

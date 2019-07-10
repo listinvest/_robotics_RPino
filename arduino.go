@@ -24,6 +24,7 @@ func initialize_arduino() {
 	arduino_prev_exp_stat = make(map[string][]int, n)
 	history_setup()
 	arduino_connected = false
+	arduino_comm_time = 0
 	lock.Unlock()
 }
 
@@ -97,6 +98,7 @@ func read_arduino() {
 		log.Printf("Periodic check failed (%q)!\n", check)
 	}
 	lock.Unlock()
+	flush_serial()
 }
 
 func comm2_arduino(sensor string) (output string) {
@@ -140,6 +142,7 @@ func comm2_arduino(sensor string) (output string) {
 		if strings.Index(reply, sensor) == 0 { // check if the reply is what we asked
 			if sensor == "S" {
 				lock.Lock()
+				arduino_comm_time =float64(elapsed.Seconds())
 				arduino_connected = true
 				lock.Unlock()
 				return "ok"
@@ -155,3 +158,19 @@ func comm2_arduino(sensor string) (output string) {
 	return output
 }
 
+
+func flush_serial() {
+	if conf.Serial.Tty == "none" {
+		return
+	}
+	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Printf("%s\n", err)
+		arduino_connected = false
+		return
+	}
+	buf := make([]byte, 16)
+	_, _ = s.Read(buf)
+	s.Close()
+}
