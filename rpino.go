@@ -35,6 +35,7 @@ var (
 	cpu_load		 int
 	iterations		 int64
 	logfile                  string
+	git_info		 string
 	arduino_prev_linear_stat map[string][]int
 	arduino_prev_exp_stat    map[string][]int
 	arduino_linear_stat      map[string]int
@@ -143,7 +144,7 @@ func main() {
 	if *verbose {
 		conf.Verbose = true
 	}
-
+	git_info = get_git_info()
 	initialize_arduino()
 	flush_serial()
 	iterations = 0

@@ -141,7 +141,7 @@ func mainpage(w http.ResponseWriter, r *http.Request) {
          <body>
          <h1>Rpino Web Interface running on ` + hostname + `</h1>
          <h2>parameters '` + strings.Join(os.Args, " ") + `'</h2>
-         <h2>git commit '` + get_git_info() + `'</h2>
+         <h2>git commit '` + git_info + `'</h2>
 
          <p><a href='/metrics'><b>Prometheus Metrics</b></a></p>
          <p><a href='/json'><b>JSON Metrics</b></a></p>
