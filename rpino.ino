@@ -5,6 +5,7 @@
 #define S2 10
 #define S3 12
 #define sensorOut 11
+int buzzerPin = 2;
 
 // Stores frequency read by the photodiodes
 int Frequency = 0;
@@ -30,6 +31,8 @@ int pirValue;
 void(* resetFunc) (void) = 0;//declare reset function at address 0
 
 void setup() {
+  pinMode(buzzerPin, OUTPUT);
+  digitalWrite(buzzerPin,LOW);
   Serial.begin(9600);
   incoming = "";
   dht.begin();
@@ -55,21 +58,14 @@ void loop() {
   if (Serial.available() > 0) {
     incoming = Serial.readStringUntil("\n");
     dht.read();
-    switch(dht.getState()) {
-      case DHT_OK:
+    if ( dht.getState() == DHT_OK) {
        temp = (int) dht.getTemperatureC();
        humidity = (int) dht.getHumidity();
        dht_status = "ok";
-       break;
-     case DHT_ERROR_CHECKSUM:
-       dht_status = "Checksum error";
-       break;
-     case DHT_ERROR_TIMEOUT:
-       dht_status = "Time out error";
-       break;
-     case DHT_ERROR_NO_REPLY:
+    } else {
         dht_status = "Sensor not connected";
-       break;
+        temp = '0';
+        humidity = '0';
     }  
     
     if (incoming == "L?\n") {
@@ -102,7 +98,7 @@ void loop() {
         Serial.println(beat);
        }
        interval = millis();
-    }                                               
+    }
     if (incoming == "X?\n") {
         Serial.print("resetting..");
         resetFunc();
@@ -147,7 +143,13 @@ void loop() {
     Serial.print("C: ");
     Serial.println(Frequency);
     }      
-    
+    if (incoming == "M?\n") {
+      Serial.print("M: ok");
+      tone(4,261);
+      delay(1000);
+      tone(4,277);
+      delay(1000);
+    }
   }
   //Serial.println();
   delay(500);
