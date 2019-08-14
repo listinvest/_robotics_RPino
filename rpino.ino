@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include <TroykaDHT.h>
+#include "Arduino.h"
 #define S0 9
 #define S1 8
 #define S2 10
@@ -26,8 +27,9 @@ String incoming;
 String temp;
 String humidity;
 String dht_status;
+String melody;
 int pirValue;
-
+char sz[] = "M;5555;9999;4444;9999";
 void(* resetFunc) (void) = 0;//declare reset function at address 0
 
 void setup() {
@@ -143,12 +145,20 @@ void loop() {
     Serial.print("C: ");
     Serial.println(Frequency);
     }      
-    if (incoming == "M?\n") {
-      Serial.print("M: ok");
-      tone(4,261);
-      delay(1000);
-      tone(4,277);
-      delay(1000);
+    if (incoming.startsWith("M;")) {
+      Serial.print("music!");
+    // Convert from String Object to String.
+    char buf[sizeof(sz)];
+    incoming.toCharArray(buf, sizeof(buf));
+    char *p = buf;
+    char *str;
+    while ((str = strtok_r(p, ";", &p)) != NULL) // delimiter is the semicolon
+      Serial.println(str);
+        //tone(atoi(str));
+      //tone(4,261);
+      //delay(1000);
+      //tone(4,277);
+      //delay(1000);
     }
   }
   //Serial.println();
