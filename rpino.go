@@ -47,6 +47,7 @@ var (
 	arduino_out              chan (string) // replies from Arduino
 	start_time               time.Time
 	conf                     *config
+	test_melody		 bool
 )
 
 var lock = &sync.Mutex{}

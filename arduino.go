@@ -25,6 +25,7 @@ func initialize_arduino() {
 	history_setup()
 	arduino_connected = false
 	arduino_comm_time = 0
+	test_melody = false
 	lock.Unlock()
 }
 
@@ -98,6 +99,9 @@ func read_arduino() {
 		log.Printf("Periodic check failed (%q)!\n", check)
 	}
 	lock.Unlock()
+	if test_melody {
+		check = comm2_arduino(conf.Alarms.Melody)
+	}
 	flush_serial()
 }
 
@@ -126,14 +130,16 @@ func comm2_arduino(sensor string) (output string) {
 	}
 	buf := []byte("________")
 	nbytes, failed := s.Read(buf)
+	if failed != nil {
+		log.Printf("error: %s\n", failed)
+		s.Close()
+		output = "null"
+		return
+	}
 	t := time.Now()
 	elapsed := t.Sub(starts)
 	if nbytes < 3 {
 		_, failed = s.Read(buf)
-	}
-	if failed != nil {
-		log.Printf("error: %s\n", failed)
-		output = "null"
 	} else {
 		reply := string(buf)
 		if conf.Verbose {

@@ -61,6 +61,10 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 		test_siren()
 		w.Write([]byte("ok"))
 
+	case "/api/melody_test":
+		test_melody()
+		w.Write([]byte("ok"))
+
 	case "/api/history_reset":
 		history_setup()
 		initialize_arduino()
@@ -73,7 +77,7 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(view_conf()))
 
 	case "/api/help":
-		w.Write([]byte("Available APIs:\n/socket\n/arduino_reset\n/alarm_test\n/history_reset\n/view_data\n"))
+		w.Write([]byte("Available APIs:\n/socket\n/arduino_reset\n/melody_tests\n/alarm_test\n/history_reset\n/view_data\n"))
 
 	default:
 		log.Printf("Unknown Api (%s)!\n", api_type)

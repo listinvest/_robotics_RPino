@@ -63,6 +63,7 @@ type alarms struct {
 	Mailbox       string `toml:"mailbox"`
 	Auth_user     string `toml:"auth_user"`
 	Auth_pwd      string `toml:"auth_pwd"`
+	Melody        string `toml:"melody"`
 }
 
 type analysis struct {

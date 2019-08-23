@@ -74,6 +74,15 @@ func test_siren() {
 	siren <- true
 }
 
+func test_melody(){
+	if conf.Alarms.Melody == "" { return }
+	if conf.Verbose {
+		log.Printf("Testing buzzer...\n")
+	}
+	test_melody=true
+}
+
+
 func siren_mgr() {
 	if !conf.Alarms.Siren_enabled {
 		return
