@@ -73,7 +73,7 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(view_conf()))
 
 	case "/api/help":
-		w.Write([]byte("Available APIs:\n/socket\n/arduino_reset\n/alarm_test\n/history_reset\n/view_data\n"))
+		w.Write([]byte("Available APIs:\n/socket\n/arduino_reset\n/alarm_test\n/history_reset\n/view_data\n/view_conf\n\n"))
 
 	default:
 		log.Printf("Unknown Api (%s)!\n", api_type)
@@ -104,7 +104,7 @@ func view_data() (reply string) {
 }
 
 func view_conf() (reply string) {
-	reply = fmt.Sprintf("%v", conf)
+	reply = fmt.Sprintf("%+v", conf)
 	return reply
 }
 
