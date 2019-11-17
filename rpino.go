@@ -170,6 +170,9 @@ func main() {
 			log.Printf("Arduino connected on port: %s ", conf.Serial.Tty)
 		}
 	}
+	if conf.Sensors.Poll_interval <= 0 {
+		log.Fatalf("Polling interval must be greater than zero!")
+	}
 	Mticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
 	defer Mticker.Stop()
 	go func() {
