@@ -18,13 +18,14 @@ func initialize_arduino() {
 	n := len(conf.Sensors.Arduino_linear)
 	arduino_linear_stat = make(map[string]int, n)
 	arduino_prev_linear_stat = make(map[string][]int, n)
+	arduino_cache_stat = make(map[string]int, n)
 	n = len(conf.Sensors.Arduino_exp)
 	arduino_exp_stat = make(map[string]int, n)
-	arduino_cache_stat = make(map[string]int, n)
 	arduino_prev_exp_stat = make(map[string][]int, n)
 	history_setup()
 	arduino_connected = false
 	arduino_comm_time = 0
+	arduino_total_fail_read = 0
 	lock.Unlock()
 }
 
@@ -45,6 +46,7 @@ func read_arduino() {
 			if err != nil {
 				log.Printf("Failed conversion: %s\n", err)
 				validated = last_linear(s)
+				arduino_total_fail_read = arduino_total_fail_read + 1
 			} else {
 				validated = output
 			}
@@ -53,9 +55,10 @@ func read_arduino() {
 			log.Printf("failed read, using cached value\n")
 			validated = last_linear(s)
 			arduino_cache_stat[s] = arduino_cache_stat[s] + 1
+			arduino_total_fail_read = arduino_total_fail_read + 1
 		}
 		reply = ""
-		if arduino_cache_stat[s] > conf.Analysis.Cache_age { validated = 0 }
+		if arduino_cache_stat[s] > conf.Analysis.Cache_age { validated = 0 ; arduino_cache_stat[s]=0; }
 		lock.Lock()
 		arduino_linear_stat[s] = validated
 		lock.Unlock()
@@ -69,8 +72,9 @@ func read_arduino() {
 		if reply != "null" {
 			output, err := strconv.Atoi(reply)
 			if err != nil {
-				log.Printf("Failed conversion: %s\n", err)
+				log.Printf("failed conversion: %s\n", err)
 				validated = last_exp(s)
+				arduino_total_fail_read = arduino_total_fail_read + 1
 			} else {
 				validated = output
 			}
@@ -80,10 +84,11 @@ func read_arduino() {
 			log.Printf("failed read, using cached value\n")
 			validated = last_exp(s)
 			arduino_cache_stat[s] = arduino_cache_stat[s] + 1
+			arduino_total_fail_read = arduino_total_fail_read + 1
 		}
 
 		reply = ""
-		if arduino_cache_stat[s] > conf.Analysis.Cache_age { validated = 0 }
+		if arduino_cache_stat[s] > conf.Analysis.Cache_age { validated = 0 ; arduino_cache_stat[s]=0; }
 		lock.Lock()
 		if validated > 0 {
 			inverted := int(1 / float32(validated) * 10000)
@@ -96,6 +101,7 @@ func read_arduino() {
 	lock.Lock()
 	if !strings.Contains(check, "ok") { // check if the reply is what we asked
 		log.Printf("Periodic check failed (%q)!\n", check)
+		arduino_total_fail_read = arduino_total_fail_read + 1
 	}
 	lock.Unlock()
 	flush_serial()
@@ -133,6 +139,7 @@ func comm2_arduino(sensor string) (output string) {
 	}
 	if failed != nil {
 		log.Printf("error: %s\n", failed)
+		arduino_total_fail_read = arduino_total_fail_read + 1
 		output = "null"
 	} else {
 		reply := string(buf)
@@ -151,6 +158,7 @@ func comm2_arduino(sensor string) (output string) {
 			output = reg.ReplaceAllString(reply, "")
 		} else {
 			log.Printf("Unexpected reply\n")
+			arduino_total_fail_read = arduino_total_fail_read + 1
 			output = "null"
 		}
 	}

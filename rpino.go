@@ -31,6 +31,7 @@ var (
 	raising                  bool
 	arduino_connected        bool
 	arduino_comm_time        float64
+	arduino_total_fail_read  int64
 	clock_offset             int
 	cpu_load		 int
 	iterations		 int64
@@ -129,6 +130,7 @@ func prometheus_update() {
 	for k, v := range rpi_stat {
 		RPIStat.WithLabelValues(k).Set(float64(v))
 	}
+	RPIStat.WithLabelValues("total_fail_read").Set(float64(arduino_total_fail_read))
 	RPIStat.WithLabelValues("iterations").Set(float64(iterations))
 	iterations++
 	lock.Unlock()
