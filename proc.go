@@ -120,4 +120,3 @@ func get_git_info() (commit string) {
 	commit = string(contents)
 	return commit
 }
-

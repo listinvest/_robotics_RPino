@@ -58,7 +58,10 @@ func read_arduino() {
 			arduino_total_fail_read = arduino_total_fail_read + 1
 		}
 		reply = ""
-		if arduino_cache_stat[s] > conf.Analysis.Cache_age { validated = 0 ; arduino_cache_stat[s]=0; }
+		if arduino_cache_stat[s] > conf.Analysis.Cache_age {
+			validated = 0
+			arduino_cache_stat[s] = 0
+		}
 		lock.Lock()
 		arduino_linear_stat[s] = validated
 		lock.Unlock()
@@ -88,7 +91,10 @@ func read_arduino() {
 		}
 
 		reply = ""
-		if arduino_cache_stat[s] > conf.Analysis.Cache_age { validated = 0 ; arduino_cache_stat[s]=0; }
+		if arduino_cache_stat[s] > conf.Analysis.Cache_age {
+			validated = 0
+			arduino_cache_stat[s] = 0
+		}
 		lock.Lock()
 		if validated > 0 {
 			inverted := int(1 / float32(validated) * 10000)
@@ -120,7 +126,7 @@ func comm2_arduino(sensor string) (output string) {
 		log.Printf("%s\n", err)
 		return
 	}
-	reg,_ := regexp.Compile("[^0-9]+")
+	reg, _ := regexp.Compile("[^0-9]+")
 	cmd := sensor + "?\n"
 	starts := time.Now()
 	_, err = s.Write([]byte(cmd))
@@ -149,7 +155,7 @@ func comm2_arduino(sensor string) (output string) {
 		if strings.Index(reply, sensor) == 0 { // check if the reply is what we asked
 			if sensor == "S" {
 				lock.Lock()
-				arduino_comm_time =float64(elapsed.Seconds())
+				arduino_comm_time = float64(elapsed.Seconds())
 				arduino_connected = true
 				lock.Unlock()
 				return "ok"
@@ -165,7 +171,6 @@ func comm2_arduino(sensor string) (output string) {
 	s.Close()
 	return output
 }
-
 
 func flush_serial() {
 	if conf.Serial.Tty == "none" {

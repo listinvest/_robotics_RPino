@@ -11,6 +11,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"sync"
+	"strconv"
 	"time"
 )
 
@@ -33,10 +34,10 @@ var (
 	arduino_comm_time        float64
 	arduino_total_fail_read  int64
 	clock_offset             int
-	cpu_load		 int
-	iterations		 int64
+	cpu_load                 int
+	iterations               int64
 	logfile                  string
-	git_info		 string
+	git_info                 string
 	arduino_prev_linear_stat map[string][]int
 	arduino_prev_exp_stat    map[string][]int
 	arduino_linear_stat      map[string]int
@@ -150,6 +151,12 @@ func main() {
 	initialize_arduino()
 	flush_serial()
 	iterations = 0
+	p, err := os.OpenFile(conf.Pidfile, os.O_RDWR|os.O_CREATE, 0666)
+	_, err = p.Write([]byte(strconv.Itoa(os.Getpid())))
+	if err != nil {
+		log.Fatal(err)
+	}
+	p.Close()
 	f, err := os.OpenFile(conf.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening log file")
@@ -202,7 +209,9 @@ func main() {
 	go get_time()
 	go water_mgr()
 	go get_cpu_usage()
-	if conf.Sensors.Sds11 { go sds11() }
+	if conf.Sensors.Sds11 {
+		go sds11()
+	}
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)

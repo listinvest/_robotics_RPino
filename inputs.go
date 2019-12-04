@@ -140,13 +140,13 @@ func sds11() {
 
 	sensor.Listen()
 	for true {
-		measure := <- measureChannel
+		measure := <-measureChannel
 		lock.Lock()
 		sensor_stat["pm2"] = int(measure.PM2_5)
 		sensor_stat["pm10"] = int(measure.PM10)
 		lock.Unlock()
 		if conf.Verbose {
-			log.Printf("[%s]\nPM 2.5 => %f μg/m³\nPM 10 => %f μg/m³\n", time.Now().Format("2006-01-02 15:04:05"),measure.PM2_5,measure.PM10)
+			log.Printf("[%s]\nPM 2.5 => %f μg/m³\nPM 10 => %f μg/m³\n", time.Now().Format("2006-01-02 15:04:05"), measure.PM2_5, measure.PM10)
 		}
 	}
 }

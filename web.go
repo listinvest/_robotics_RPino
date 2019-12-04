@@ -12,6 +12,13 @@ import (
 	"time"
 )
 
+var (
+	hostname string
+)
+
+func init() {
+	hostname, _ = os.Hostname()
+}
 func json_stats(w http.ResponseWriter, r *http.Request) {
 	all_data := make(map[string]int)
 	lock.Lock()
@@ -124,7 +131,7 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			log.Printf("received a good json %t", json_message.Siren)
 		} else {
-			fmt.Fprintf(w, "invalid JSON - %s",err)
+			fmt.Fprintf(w, "invalid JSON - %s", err)
 		}
 
 	} else {

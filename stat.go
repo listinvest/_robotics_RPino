@@ -69,7 +69,7 @@ func history_setup() {
 	for k := range arduino_linear_stat {
 		arduino_linear_stat[k] = 0
 	}
-	for _,k := range conf.Sensors.Arduino_linear {
+	for _, k := range conf.Sensors.Arduino_linear {
 		arduino_prev_linear_stat[k] = []int{0}
 	}
 	for k := range arduino_exp_stat {
@@ -78,7 +78,7 @@ func history_setup() {
 	for k := range arduino_exp_stat {
 		arduino_cache_stat[k] = 0
 	}
-	for _,k := range conf.Sensors.Arduino_exp {
+	for _, k := range conf.Sensors.Arduino_exp {
 		arduino_prev_exp_stat[k] = []int{0}
 	}
 	if conf.Verbose {
