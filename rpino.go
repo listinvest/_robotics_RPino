@@ -152,7 +152,7 @@ func main() {
 	flush_serial()
 	iterations = 0
 	p, err := os.OpenFile(conf.Pidfile, os.O_RDWR|os.O_CREATE, 0666)
-	_, err = p.Write([]byte(strconv.Itoa(os.Getpid())))
+	_, err = p.Write([]byte(strconv.Itoa(os.Getpid())+"\n"))
 	if err != nil {
 		log.Fatal(err)
 	}
