@@ -11,6 +11,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"sync"
+	"strconv"
 	"time"
 )
 
@@ -31,10 +32,12 @@ var (
 	raising                  bool
 	arduino_connected        bool
 	arduino_comm_time        float64
+	arduino_total_fail_read  int64
 	clock_offset             int
-	cpu_load		 int
-	iterations		 int64
+	cpu_load                 int
+	iterations               int64
 	logfile                  string
+	git_info                 string
 	arduino_prev_linear_stat map[string][]int
 	arduino_prev_exp_stat    map[string][]int
 	arduino_linear_stat      map[string]int
@@ -128,6 +131,7 @@ func prometheus_update() {
 	for k, v := range rpi_stat {
 		RPIStat.WithLabelValues(k).Set(float64(v))
 	}
+	RPIStat.WithLabelValues("total_fail_read").Set(float64(arduino_total_fail_read))
 	RPIStat.WithLabelValues("iterations").Set(float64(iterations))
 	iterations++
 	lock.Unlock()
@@ -143,10 +147,16 @@ func main() {
 	if *verbose {
 		conf.Verbose = true
 	}
-
+	git_info = get_git_info()
 	initialize_arduino()
 	flush_serial()
 	iterations = 0
+	p, err := os.OpenFile(conf.Pidfile, os.O_RDWR|os.O_CREATE, 0666)
+	_, err = p.Write([]byte(strconv.Itoa(os.Getpid())+"\n"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	p.Close()
 	f, err := os.OpenFile(conf.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening log file")
@@ -168,6 +178,9 @@ func main() {
 		if conf.Serial.Tty != "none" {
 			log.Printf("Arduino connected on port: %s ", conf.Serial.Tty)
 		}
+	}
+	if conf.Sensors.Poll_interval <= 0 {
+		log.Fatalf("Polling interval must be greater than zero!")
 	}
 	Mticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
 	defer Mticker.Stop()
@@ -196,7 +209,9 @@ func main() {
 	go get_time()
 	go water_mgr()
 	go get_cpu_usage()
-	if conf.Sensors.Sds11 { go sds11() }
+	if conf.Sensors.Sds11 {
+		go sds11()
+	}
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/api/", api_router)

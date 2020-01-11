@@ -12,6 +12,13 @@ import (
 	"time"
 )
 
+var (
+	hostname string
+)
+
+func init() {
+	hostname, _ = os.Hostname()
+}
 func json_stats(w http.ResponseWriter, r *http.Request) {
 	all_data := make(map[string]int)
 	lock.Lock()
@@ -73,7 +80,7 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(view_conf()))
 
 	case "/api/help":
-		w.Write([]byte("Available APIs:\n/socket\n/arduino_reset\n/alarm_test\n/history_reset\n/view_data\n"))
+		w.Write([]byte("<html><body><h1>Available APIs:</h1><br><a href='/api/socket'>/socket</a><br><a href='/api/arduino_reset'>/arduino_reset</a><br><a href='/api/alarm_test'>/alarm_test</a><br><a href='/api/history_reset'>/history_reset</a><br><a href='/api/view_data'>/view_data</a><br><a href='/api/view_conf'>/view_conf</a></body></html>"))
 
 	default:
 		log.Printf("Unknown Api (%s)!\n", api_type)
@@ -104,8 +111,7 @@ func view_data() (reply string) {
 }
 
 func view_conf() (reply string) {
-	reply = fmt.Sprintf("%q", conf.Sensors.Arduino_linear)
-	reply = reply + "\n" + fmt.Sprintf("%q", conf.Sensors.Arduino_exp)
+	reply = fmt.Sprintf("%+v", conf)
 	return reply
 }
 
@@ -125,7 +131,7 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			log.Printf("received a good json %t", json_message.Siren)
 		} else {
-			fmt.Fprintf(w, "invalid JSON - %s",err)
+			fmt.Fprintf(w, "invalid JSON - %s", err)
 		}
 
 	} else {
@@ -141,7 +147,7 @@ func mainpage(w http.ResponseWriter, r *http.Request) {
          <body>
          <h1>Rpino Web Interface running on ` + hostname + `</h1>
          <h2>parameters '` + strings.Join(os.Args, " ") + `'</h2>
-         <h2>git commit '` + get_git_info() + `'</h2>
+         <h2>git commit '` + git_info + `'</h2>
 
          <p><a href='/metrics'><b>Prometheus Metrics</b></a></p>
          <p><a href='/json'><b>JSON Metrics</b></a></p>
