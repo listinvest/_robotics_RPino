@@ -62,16 +62,19 @@ func bmp180() {
 	i2c, err := i2c.NewI2C(uint8(0x77), 1)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	defer i2c.Close()
 	sensor, err := bsbmp.NewBMP(bsbmp.BMP180, i2c)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	// Read temperature in celsius degree
 	t, err := sensor.ReadTemperatureC(bsbmp.ACCURACY_STANDARD)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	if conf.Verbose {
 		log.Printf("Temperature = %f*C", t)
@@ -80,6 +83,7 @@ func bmp180() {
 	p, err := sensor.ReadPressurePa(bsbmp.ACCURACY_STANDARD)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	if conf.Verbose {
 		log.Printf("Pressure = %f millibar", p/100)
@@ -98,6 +102,7 @@ func dht11() {
 	temperature, humidity, _, err := dht.ReadDHTxxWithRetry(dht.DHT11, 14, true, 3)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	if conf.Verbose {
 		log.Printf("Temperature = %f*C, Humidity = %f%%", temperature, humidity)
@@ -129,13 +134,30 @@ func sds11() {
 	s, err := serial.OpenPort(c)
 	if err != nil {
 		log.Printf("%s", err)
+		return
 	}
 
 	sensor := sds011.NewSensor(s)
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
 
-	_ = sensor.Sleep(false)
-	_ = sensor.SetWorkingPeriod(1)
-	_ = sensor.SetMode(sds011.ActiveMode)
+	err = sensor.Sleep(false)
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
+	err = sensor.SetWorkingPeriod(1)
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
+	err = sensor.SetMode(sds011.ActiveMode)
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
 
 	measureChannel := make(chan sds011.Measurement)
 	sensor.OnQuery(measureChannel)
