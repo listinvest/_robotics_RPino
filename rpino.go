@@ -154,7 +154,7 @@ func main() {
 	p, err := os.OpenFile(conf.Pidfile, os.O_RDWR|os.O_CREATE, 0666)
 	_, err = p.Write([]byte(strconv.Itoa(os.Getpid())+"\n"))
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Cannot generate pid file")
 	}
 	p.Close()
 	f, err := os.OpenFile(conf.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
