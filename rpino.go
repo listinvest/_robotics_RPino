@@ -126,7 +126,7 @@ func prometheus_update() {
 	}
 	if temp {
 		dutyc := dutycycle("T")
-		SensorStat.WithLabelValues("dutycycle_T").Set(float64(dutyc))
+		SensorStat.WithLabelValues("dutycycle").Set(float64(dutyc))
 	}
 	for k, v := range rpi_stat {
 		RPIStat.WithLabelValues(k).Set(float64(v))
