@@ -115,7 +115,7 @@ func read_arduino() {
 
 func comm2_arduino(sensor string) (output string) {
 	if conf.Serial.Tty == "none" {
-		return
+		return "null"
 	}
 	lock.Lock()
 	arduino_connected = false
@@ -124,7 +124,7 @@ func comm2_arduino(sensor string) (output string) {
 	s, err := serial.OpenPort(c)
 	if err != nil {
 		log.Printf("%s\n", err)
-		return
+		return "null"
 	}
 	reg, _ := regexp.Compile("[^0-9]+")
 	cmd := sensor + "?\n"
@@ -132,6 +132,7 @@ func comm2_arduino(sensor string) (output string) {
 	_, err = s.Write([]byte(cmd))
 	if err != nil {
 		log.Printf("%s\n", err)
+		return "null"
 	}
 	if conf.Verbose {
 		log.Printf("Asked: %s", cmd)
