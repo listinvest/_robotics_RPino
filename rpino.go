@@ -219,5 +219,5 @@ func main() {
 	http.HandleFunc("/notify", PostHandler)
 	http.HandleFunc("/main", mainpage)
 	fmt.Printf("Rpino is up\n")
-	log.Fatal(http.ListenAndServe(conf.Listen, nil))
+	log.Panicf("Cannot bind http port, bye\n",http.ListenAndServe(conf.Listen, nil))
 }
