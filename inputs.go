@@ -139,23 +139,23 @@ func sds11() {
 
 	sensor := sds011.NewSensor(s)
 	if err != nil {
-		log.Printf("%s", err)
+		log.Printf("1: %s", err)
 		return
 	}
 
 	err = sensor.Sleep(false)
 	if err != nil {
-		log.Printf("%s", err)
+		log.Printf("2: %s", err)
 		return
 	}
 	err = sensor.SetWorkingPeriod(1)
 	if err != nil {
-		log.Printf("%s", err)
+		log.Printf("3: %s", err)
 		return
 	}
 	err = sensor.SetMode(sds011.ActiveMode)
 	if err != nil {
-		log.Printf("%s", err)
+		log.Printf("4: %s", err)
 		return
 	}
 

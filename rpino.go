@@ -140,6 +140,7 @@ func prometheus_update() {
 func main() {
 	confPath := flag.String("c", "cfg.cfg", "Configuration file")
 	verbose := flag.Bool("v", false, "Enable logging")
+	live := flag.Bool("l", false, "Log to stdout")
 	flag.Parse()
 	start_time = time.Now()
 	conf = loadConfig(*confPath)
@@ -157,12 +158,16 @@ func main() {
 		fmt.Println("Cannot generate pid file")
 	}
 	p.Close()
-	f, err := os.OpenFile(conf.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening log file")
+	if ! *live {
+		f, err := os.OpenFile(conf.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalf("error opening log file")
+		}
+		log.SetOutput(f)
+		defer f.Close()
+	} else {
+		log.SetOutput(os.Stdout)
 	}
-	defer f.Close()
-	log.SetOutput(f)
 	log.SetPrefix("[RPino] ")
 	log.Printf("Git version: %s\n", get_git_info())
 	log.Printf("Prometheus metrics will be exposed on %s\n", conf.Listen)
@@ -179,7 +184,7 @@ func main() {
 			log.Printf("Arduino connected on port: %s ", conf.Serial.Tty)
 		}
 	}
-	if conf.Sensors.Poll_interval <= 0 {
+	if conf.Sensors.Poll_interval < 0 {
 		log.Fatalf("Polling interval must be greater than zero!")
 	}
 	Mticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
