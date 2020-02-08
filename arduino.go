@@ -40,7 +40,8 @@ func read_arduino() {
 	for _, s := range conf.Sensors.Arduino_linear {
 		log.Printf("sent instruction for: %s", s)
 		validated := 0
-		reply = comm2_arduino(s)
+		msg := s+"?"
+		reply = comm2_arduino(msg)
 		if reply != "null" {
 			output, err := strconv.Atoi(reply)
 			if err != nil {
@@ -71,7 +72,8 @@ func read_arduino() {
 	for _, s := range conf.Sensors.Arduino_exp {
 		log.Printf("sent instruction for: %s", s)
 		validated := 0
-		reply = comm2_arduino(s)
+		msg := s+"?"
+		reply = comm2_arduino(msg)
 		if reply != "null" {
 			output, err := strconv.Atoi(reply)
 			if err != nil {
@@ -103,13 +105,20 @@ func read_arduino() {
 		lock.Unlock()
 		time.Sleep(time.Second * 2)
 	}
-	check := comm2_arduino("S")
+	check := comm2_arduino("S?")
 	lock.Lock()
 	if !strings.Contains(check, "ok") { // check if the reply is what we asked
 		log.Printf("Periodic check failed (%q)!\n", check)
 		arduino_total_fail_read = arduino_total_fail_read + 1
 	}
 	lock.Unlock()
+	Alock.Lock()
+	if TurnAlarm  {
+		a := comm2_arduino("A!")
+		log.Printf("%s\n", a)
+		TurnAlarm = false
+	}
+	Alock.Unlock()
 	flush_serial()
 }
 
@@ -127,15 +136,14 @@ func comm2_arduino(sensor string) (output string) {
 		return "null"
 	}
 	reg, _ := regexp.Compile("[^0-9]+")
-	cmd := sensor + "?\n"
 	starts := time.Now()
-	_, err = s.Write([]byte(cmd))
+	_, err = s.Write([]byte(sensor))
 	if err != nil {
 		log.Printf("%s\n", err)
 		return "null"
 	}
 	if conf.Verbose {
-		log.Printf("Asked: %s", cmd)
+		log.Printf("Asked: %s", sensor)
 	}
 	buf := []byte("________")
 	nbytes, failed := s.Read(buf)
@@ -159,6 +167,9 @@ func comm2_arduino(sensor string) (output string) {
 				arduino_comm_time = float64(elapsed.Seconds())
 				arduino_connected = true
 				lock.Unlock()
+				return "ok"
+			}
+			if sensor == "A" {
 				return "ok"
 			}
 			reply = strings.Replace(reply, sensor+": ", "", 1)

@@ -11,6 +11,7 @@ import (
 	"net/smtp"
 	"os"
 	"os/exec"
+	"sync"
 	"strconv"
 	"time"
 )
@@ -20,6 +21,7 @@ var (
 	gpio2 chan (string)
 	input chan (bool)
 	siren chan (bool)
+        Alock = &sync.Mutex{}
 )
 
 func init() {
@@ -85,6 +87,7 @@ func siren_mgr() {
 		log.Fatal("Alarm configured but GPIO for the siren is not!")
 		os.Exit(1)
 	}
+	/*
 	// Open and map memory to access gpio, check for errors
 	var pin = rpio.Pin(conf.Outputs["alarm"].PIN)
 	if err := rpio.Open(); err != nil {
@@ -95,6 +98,7 @@ func siren_mgr() {
 	pin.High()
 	//pin.Low()
 	defer rpio.Close()
+	*/
 	for {
 		listentome := false
 		listentome = <-siren
@@ -102,29 +106,36 @@ func siren_mgr() {
 			if conf.Verbose {
 				log.Printf("Siren ON!!\n")
 			}
-			pin.Low()
+			Alock.Lock()
+			TurnAlarm = true
+			Alock.Unlock()
 			//pin.High()
 			time.Sleep(time.Second * 10)
 			if conf.Verbose {
 				log.Printf("Siren OFF!!\n")
 			}
-			pin.High()
-			//pin.Low()
+			Alock.Lock()
+			TurnAlarm = true
+			Alock.Unlock()
+			//pin.High()
 			time.Sleep(time.Second * 10)
 		}
 	}
 }
 
 func alarm_mgr() {
+	if !conf.Alarms.Presence {
+		return
+	}
+	//if arduino_linear_stat["U"] == 0 {
+	//	log.Fatal("No U sensor (PIR) configured!")
+	//	os.Exit(1)
+	//}
 	time.Sleep(time.Minute)
 	//set a x seconds ticker
 	Aticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
 	defer Aticker.Stop()
 	// check if presence and U sensor are both setup (it has been just initialized)
-	if conf.Alarms.Presence && arduino_linear_stat["U"] == 0 {
-		log.Fatal("Alarm configured but GPIO for the relay is not!")
-		os.Exit(1)
-	}
 
 	for range Aticker.C {
 		lock.Lock()

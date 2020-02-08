@@ -10,8 +10,8 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"sync"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -31,6 +31,7 @@ var (
 	verbose                  bool
 	raising                  bool
 	arduino_connected        bool
+	TurnAlarm		 bool
 	arduino_comm_time        float64
 	arduino_total_fail_read  int64
 	clock_offset             int
@@ -153,12 +154,12 @@ func main() {
 	flush_serial()
 	iterations = 0
 	p, err := os.OpenFile(conf.Pidfile, os.O_RDWR|os.O_CREATE, 0666)
-	_, err = p.Write([]byte(strconv.Itoa(os.Getpid())+"\n"))
+	_, err = p.Write([]byte(strconv.Itoa(os.Getpid()) + "\n"))
 	if err != nil {
 		fmt.Println("Cannot generate pid file")
 	}
 	p.Close()
-	if ! *live {
+	if !*live {
 		f, err := os.OpenFile(conf.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			log.Fatalf("error opening log file")
@@ -224,5 +225,5 @@ func main() {
 	http.HandleFunc("/notify", PostHandler)
 	http.HandleFunc("/main", mainpage)
 	fmt.Printf("Rpino is up\n")
-	log.Panicf("Cannot bind http port, bye\n",http.ListenAndServe(conf.Listen, nil))
+	log.Panicf("Cannot bind http port, bye\n", http.ListenAndServe(conf.Listen, nil))
 }
