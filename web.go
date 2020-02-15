@@ -44,6 +44,8 @@ func json_stats(w http.ResponseWriter, r *http.Request) {
 	days := int(elapsed.Hours()) / 24
 	all_data["rpino_uptime_days"] = days
 	all_data["rpino_uptime_hours"] = hours
+	ver, _  := strconv.Atoi(version)
+	all_data["arduino_version"] = ver
 	msg, _ := json.Marshal(all_data)
 	w.Write(msg)
 }

@@ -31,7 +31,7 @@ var (
 	verbose                  bool
 	raising                  bool
 	arduino_connected        bool
-	TurnAlarm		 bool
+	TurnAlarm                bool
 	arduino_comm_time        float64
 	arduino_total_fail_read  int64
 	clock_offset             int
@@ -39,6 +39,7 @@ var (
 	iterations               int64
 	logfile                  string
 	git_info                 string
+	version			 string
 	arduino_prev_linear_stat map[string][]int
 	arduino_prev_exp_stat    map[string][]int
 	arduino_linear_stat      map[string]int
@@ -136,6 +137,11 @@ func prometheus_update() {
 	RPIStat.WithLabelValues("iterations").Set(float64(iterations))
 	iterations++
 	lock.Unlock()
+	Alock.Lock()
+	if TurnAlarm {
+		RPIStat.WithLabelValues("siren_on").Set(float64(1))
+	}
+	Alock.Unlock()
 }
 
 func main() {
@@ -174,15 +180,11 @@ func main() {
 	log.Printf("Prometheus metrics will be exposed on %s\n", conf.Listen)
 	if conf.Verbose {
 		log.Printf("Verbose logging is enabled")
-		if conf.Alarms.Siren_enabled {
-			log.Printf("Siren on pin %d for low temperature set on %d", conf.Outputs["alarm"].PIN, conf.Alarms.Critical_temp)
-		}
-		if conf.Alarms.Email_enabled {
-			log.Printf("Email notification is for: %s ", conf.Alarms.Mailbox)
-		}
 		log.Printf("Adjustments: H %d, T %d ", conf.Sensors.Adj_H["value"], conf.Sensors.Adj_T["value"])
 		if conf.Serial.Tty != "none" {
 			log.Printf("Arduino connected on port: %s ", conf.Serial.Tty)
+			version = comm2_arduino("V?")
+			log.Printf("Arduino firmware version: %s\n", version)
 		}
 	}
 	if conf.Sensors.Poll_interval < 0 {

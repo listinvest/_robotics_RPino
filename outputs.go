@@ -11,8 +11,8 @@ import (
 	"net/smtp"
 	"os"
 	"os/exec"
-	"sync"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -21,7 +21,7 @@ var (
 	gpio2 chan (string)
 	input chan (bool)
 	siren chan (bool)
-        Alock = &sync.Mutex{}
+	Alock = &sync.Mutex{}
 )
 
 func init() {
@@ -83,21 +83,17 @@ func siren_mgr() {
 	if conf.Verbose {
 		log.Printf("Siren manager on\n")
 	}
-	if conf.Outputs["alarm"].PIN == 0 {
-		log.Fatal("Alarm configured but GPIO for the siren is not!")
-		os.Exit(1)
-	}
 	/*
-	// Open and map memory to access gpio, check for errors
-	var pin = rpio.Pin(conf.Outputs["alarm"].PIN)
-	if err := rpio.Open(); err != nil {
-		log.Fatal("Cannot open alarm pin")
-		os.Exit(1)
-	}
-	pin.Output()
-	pin.High()
-	//pin.Low()
-	defer rpio.Close()
+		// Open and map memory to access gpio, check for errors
+		var pin = rpio.Pin(conf.Outputs["alarm"].PIN)
+		if err := rpio.Open(); err != nil {
+			log.Fatal("Cannot open alarm pin")
+			os.Exit(1)
+		}
+		pin.Output()
+		pin.High()
+		//pin.Low()
+		defer rpio.Close()
 	*/
 	for {
 		listentome := false
@@ -110,7 +106,7 @@ func siren_mgr() {
 			TurnAlarm = true
 			Alock.Unlock()
 			//pin.High()
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Second * 40)
 			if conf.Verbose {
 				log.Printf("Siren OFF!!\n")
 			}
@@ -118,19 +114,21 @@ func siren_mgr() {
 			TurnAlarm = true
 			Alock.Unlock()
 			//pin.High()
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Second * 40)
 		}
 	}
 }
 
 func alarm_mgr() {
-	if !conf.Alarms.Presence {
-		return
-	}
-	//if arduino_linear_stat["U"] == 0 {
-	//	log.Fatal("No U sensor (PIR) configured!")
-	//	os.Exit(1)
+	//if !conf.Alarms.Presence || !conf.Alarms.Siren_enabled || !conf.Alarms.Email_enabled {
+	//	return
 	//}
+	if conf.Alarms.Critical_temp <= 0  {
+		log.Printf("Set a temperature threshold!")
+		return
+	} else {
+		log.Printf("Siren enabled for low temp (%d degrees)", conf.Alarms.Critical_temp)
+	}
 	time.Sleep(time.Minute)
 	//set a x seconds ticker
 	Aticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)

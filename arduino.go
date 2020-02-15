@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+//var reg regexp·Regexp
+
+//func init() {
+//	reg, _ := regexp.Compile("[^0-9]+")
+//}
+
 func initialize_arduino() {
 	if conf.Serial.Tty == "none" {
 		return
@@ -40,7 +46,7 @@ func read_arduino() {
 	for _, s := range conf.Sensors.Arduino_linear {
 		log.Printf("sent instruction for: %s", s)
 		validated := 0
-		msg := s+"?"
+		msg := s + "?"
 		reply = comm2_arduino(msg)
 		if reply != "null" {
 			output, err := strconv.Atoi(reply)
@@ -72,7 +78,7 @@ func read_arduino() {
 	for _, s := range conf.Sensors.Arduino_exp {
 		log.Printf("sent instruction for: %s", s)
 		validated := 0
-		msg := s+"?"
+		msg := s + "?"
 		reply = comm2_arduino(msg)
 		if reply != "null" {
 			output, err := strconv.Atoi(reply)
@@ -113,7 +119,7 @@ func read_arduino() {
 	}
 	lock.Unlock()
 	Alock.Lock()
-	if TurnAlarm  {
+	if TurnAlarm {
 		a := comm2_arduino("A!")
 		log.Printf("%s\n", a)
 		TurnAlarm = false
@@ -126,20 +132,21 @@ func comm2_arduino(sensor string) (output string) {
 	if conf.Serial.Tty == "none" {
 		return "null"
 	}
+	sensor = sensor + "\n"
 	lock.Lock()
 	arduino_connected = false
 	lock.Unlock()
 	c := &serial.Config{Name: conf.Serial.Tty, Baud: conf.Serial.Baud, ReadTimeout: time.Millisecond * time.Duration(conf.Serial.Timeout)}
 	s, err := serial.OpenPort(c)
 	if err != nil {
-		log.Printf("%s\n", err)
+		log.Printf("cannot open serial: %s\n", err)
 		return "null"
 	}
-	reg, _ := regexp.Compile("[^0-9]+")
+	reg, _ := regexp.Compile("[0-9]+")
 	starts := time.Now()
 	_, err = s.Write([]byte(sensor))
 	if err != nil {
-		log.Printf("%s\n", err)
+		log.Printf("cannot write to serial: %s\n", err)
 		return "null"
 	}
 	if conf.Verbose {
@@ -153,27 +160,28 @@ func comm2_arduino(sensor string) (output string) {
 		_, failed = s.Read(buf)
 	}
 	if failed != nil {
-		log.Printf("error: %s\n", failed)
+		log.Printf("cannot read from serial: %s\n", failed)
 		arduino_total_fail_read = arduino_total_fail_read + 1
 		output = "null"
 	} else {
-		reply := string(buf)
+		whole_reply := string(buf)
 		if conf.Verbose {
-			log.Printf("Got %d bytes: %s, took %f", nbytes, reply, elapsed.Seconds())
+			log.Printf("Got %d bytes: %s, took %f", nbytes, whole_reply, elapsed.Seconds())
 		}
-		if strings.Index(reply, sensor) == 0 { // check if the reply is what we asked
-			if sensor == "S" {
+		asked := strings.Split(sensor, "")
+		if strings.HasPrefix(whole_reply, asked[0]) { // check if the reply is what we asked
+			if asked[0] == "S" {
 				lock.Lock()
 				arduino_comm_time = float64(elapsed.Seconds())
 				arduino_connected = true
 				lock.Unlock()
 				return "ok"
 			}
-			if sensor == "A" {
+			if asked[0] == "A" {
 				return "ok"
 			}
-			reply = strings.Replace(reply, sensor+": ", "", 1)
-			output = reg.ReplaceAllString(reply, "")
+			number := reg.FindAllString(whole_reply, 1)
+			output = number[0]
 		} else {
 			log.Printf("Unexpected reply\n")
 			arduino_total_fail_read = arduino_total_fail_read + 1

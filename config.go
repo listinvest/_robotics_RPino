@@ -55,10 +55,10 @@ type serial_conf struct {
 }
 
 type alarms struct {
-	Critical_temp int `toml:"critical_temp"`
 	Email_enabled bool
 	Siren_enabled bool
 	Presence      bool
+	Critical_temp int `toml:"critical_temp"`
 	Slack_token   string `toml:"token"`
 	Smtp          string `toml:"smtp"`
 	Mailbox       string `toml:"mailbox"`
