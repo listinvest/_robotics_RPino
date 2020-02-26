@@ -137,7 +137,7 @@ func alarm_mgr() {
 
 	for range Aticker.C {
 		lock.Lock()
-		actual_temp := arduino_linear_stat["T"]
+		actual_temp := avg_linear("T")
 		//human := arduino_linear_stat["U"]
 		lock.Unlock()
 		// temperature alarm

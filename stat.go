@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 )
 
 func nsamples(sensor string) (num int) {
@@ -29,6 +30,15 @@ func add_linear(sensor string, value int) {
 		arduino_prev_linear_stat[sensor] = arduino_prev_linear_stat[sensor][1:]
 	}
 
+}
+
+func avg_linear(sensor string) (avg int) {
+	lenght := len(arduino_prev_linear_stat[sensor])
+	avg = 0
+	for i := 0; i < lenght; i++ {
+		avg = avg + arduino_prev_linear_stat[sensor][i]
+	}
+	return int(math.Ceil(float64(avg)))
 }
 
 func add_exp(sensor string, value int) {
