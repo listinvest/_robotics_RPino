@@ -12,6 +12,8 @@ Read the values to a greenhouse visitor
 Activate power sockets (also possible via API) 
 
 
+![Alt text](pics/IMG_4871.jpg "RPino")
+
 ## Components
 
 The whole solutions uses few tightly integrated components and this schema illustrates all of them:
