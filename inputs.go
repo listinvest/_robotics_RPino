@@ -41,7 +41,7 @@ func gpio_watch(sensor string, Spin int) {
 	defer Gticker.Stop()
 
 	for range Gticker.C {
-		pin.Toggle()                     //fick
+		pin.Toggle()                     //flick
 		time.Sleep(5 * time.Millisecond) //wait
 		res := pin.Read()                //read
 		//log.Printf("detected: %d",res)
@@ -99,7 +99,7 @@ func dht11() {
 	if conf.Verbose {
 		log.Println("Reading DHT11")
 	}
-	temperature, humidity, _, err := dht.ReadDHTxxWithRetry(dht.DHT11, 14, true, 3)
+	temperature, humidity, _, err := dht.ReadDHTxxWithRetry(dht.DHT11, conf.Sensors.Dht_pin, true, 3)
 	if err != nil {
 		log.Println(err)
 		return

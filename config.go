@@ -40,6 +40,7 @@ type sensors struct {
 	Adj_T          map[string]int
 	Bmp            bool `toml:"bmp"`
 	Dht            bool `toml:"dht"`
+	Dht_pin        int `toml:"dht_pin"`
 	Sds11          bool `toml:"sds11"`
 }
 
