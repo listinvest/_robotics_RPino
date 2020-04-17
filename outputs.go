@@ -120,20 +120,13 @@ func siren_mgr() {
 }
 
 func alarm_mgr() {
-	//if !conf.Alarms.Presence || !conf.Alarms.Siren_enabled || !conf.Alarms.Email_enabled {
-	//	return
-	//}
-	if conf.Alarms.Critical_temp <= 0  {
-		log.Printf("Set a temperature threshold!")
-		return
-	} else {
+	if conf.Alarms.Critical_temp > 0  {
 		log.Printf("Siren enabled for low temp (%d degrees)", conf.Alarms.Critical_temp)
 	}
 	time.Sleep(time.Minute)
 	//set a x seconds ticker
 	Aticker := time.NewTicker(time.Duration(conf.Sensors.Poll_interval) * time.Second)
 	defer Aticker.Stop()
-	// check if presence and U sensor are both setup (it has been just initialized)
 
 	for range Aticker.C {
 		lock.Lock()
