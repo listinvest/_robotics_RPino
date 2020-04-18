@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -78,11 +79,14 @@ func api_router(w http.ResponseWriter, r *http.Request) {
 	case "/api/view_data":
 		w.Write([]byte(view_data()))
 
+	case "/api/os_stats":
+		w.Write([]byte(view_os()))
+
 	case "/api/view_conf":
 		w.Write([]byte(view_conf()))
 
 	case "/api/help":
-		w.Write([]byte("<html><body><h1>Available APIs:</h1><br><a href='/api/socket'>/socket</a><br><a href='/api/arduino_reset'>/arduino_reset</a><br><a href='/api/alarm_test'>/alarm_test</a><br><a href='/api/history_reset'>/history_reset</a><br><a href='/api/view_data'>/view_data</a><br><a href='/api/view_conf'>/view_conf</a></body></html>"))
+		w.Write([]byte("<html><body><h1>Available APIs:</h1><br><a href='/api/socket'>/socket</a><br><a href='/api/arduino_reset'>/arduino_reset</a><br><a href='/api/alarm_test'>/alarm_test</a><br><a href='/api/history_reset'>/history_reset</a><br><a href='/api/view_data'>/view_data</a><br><a href='/api/view_conf'>/view_conf</a><br><a href='/api/os_stats'>/OS stats</a></body></html>"))
 
 	default:
 		log.Printf("Unknown Api (%s)!\n", api_type)
@@ -113,8 +117,14 @@ func view_data() (reply string) {
 }
 
 func view_conf() (reply string) {
-	reply = fmt.Sprintf("%+v", conf)
-	return reply
+	raw,_ := ioutil.ReadFile(confPath)
+	return string(raw)
+}
+
+func view_os() (reply string) {
+	raw, err := exec.Command("df", "-h", "/ramdisk/").Output()
+	log.Printf("Cannot run df command: %s\n", err)
+	return string(raw)
 }
 
 // PostHandler converts post request body to string

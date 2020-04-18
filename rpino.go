@@ -28,6 +28,7 @@ var RPIStat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	[]string{"rpi"})
 
 var (
+	confPath		 string
 	verbose                  bool
 	raising                  bool
 	arduino_connected        bool
@@ -145,12 +146,12 @@ func prometheus_update() {
 }
 
 func main() {
-	confPath := flag.String("c", "cfg.cfg", "Configuration file")
+	flag.StringVar(&confPath, "c", "cfg.cfg", "Configuration file")
 	verbose := flag.Bool("v", false, "Enable logging")
 	live := flag.Bool("l", false, "Log to stdout")
 	flag.Parse()
 	start_time = time.Now()
-	conf = loadConfig(*confPath)
+	conf = loadConfig(confPath)
 
 	if *verbose {
 		conf.Verbose = true
