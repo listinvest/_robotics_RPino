@@ -87,6 +87,7 @@ func get_rpi_stat() {
 	rpi_stat["cpu_load"] = cpu_load
 	rpi_stat["clock_offset"] = clock_offset
 	rpi_stat["entropy"] = get_entropy()
+	rpi_stat["disk_usage"] = get_disk_usage()
 	if conf.Serial.Tty != "none" {
 		rpi_stat["arduino_present"] = 1
 		if arduino_connected {

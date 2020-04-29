@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -35,6 +36,20 @@ func get_wireless_signal() (w int) {
 		w, _ = strconv.Atoi(strings.TrimSuffix(fields[29], "."))
 	}
 	return w
+}
+
+func get_disk_usage() (e int) {
+	raw, err := exec.Command("df", "--output=pcent", "/ramdisk/").Output()
+	if err != nil {
+		fmt.Printf("Cannot run df command: %s\n", err)
+	}
+	d := string(raw)
+	percent:=d[6:len(d)-2]
+	e , err = strconv.Atoi(percent)
+	if err != nil {
+		fmt.Printf("Cannot convert: %s\n", err)
+	}
+	return e
 }
 
 func get_cpu_temp() (t int) {
