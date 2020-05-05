@@ -102,6 +102,10 @@ func dht11() {
 	temperature, humidity, _, err := dht.ReadDHTxxWithRetry(dht.DHT11, conf.Sensors.Dht_pin, true, 3)
 	if err != nil {
 		log.Println(err)
+		lock.Lock()
+		sensor_stat["dht_T"] = 0
+		sensor_stat["dht_H"] = 0
+		lock.Unlock()
 		return
 	}
 	if conf.Verbose {
